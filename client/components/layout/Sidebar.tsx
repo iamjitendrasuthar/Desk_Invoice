@@ -45,10 +45,10 @@ export default function Sidebar() {
           </div>
           <div>
             <span className="block font-extrabold text-xl tracking-tight text-slate-900 leading-none">
-              JS Interiors
+              Desk Invoice
             </span>
             <span className="block text-[10px] font-bold uppercase tracking-widest text-indigo-500 mt-1">
-              Studio Admin
+              Admin Dashboard
             </span>
           </div>
         </div>

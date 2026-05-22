@@ -15,7 +15,7 @@ import {
   Minus,
   Package,
 } from "lucide-react";
-
+import { useRouter, useSearchParams } from "next/navigation";
 interface InvoiceItem {
   product: string;
   name: string;
@@ -62,7 +62,17 @@ export default function BillingPage() {
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [savedInvoice, setSavedInvoice] = useState<any>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
 
+    if (tabParam === "history") {
+      setTab("list");
+    } else {
+      setTab("create");
+    }
+  }, [searchParams]);
   useEffect(() => {
     if (tab === "list") {
       setLoading(true);
@@ -264,8 +274,12 @@ export default function BillingPage() {
                 <button
                   key={t}
                   onClick={() => {
-                    setTab(t);
-                    if (t === "create") setSavedInvoice(null);
+                    if (t === "list") {
+                      router.push("/billing?tab=history");
+                    } else {
+                      router.push("/billing");
+                      setSavedInvoice(null);
+                    }
                   }}
                   className={`relative px-6 py-2 rounded-xl text-sm font-bold capitalize transition-all duration-300 ${
                     tab === t

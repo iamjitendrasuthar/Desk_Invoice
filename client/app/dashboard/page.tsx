@@ -28,6 +28,7 @@ import {
   BarChart,
   Bar,
 } from "recharts";
+import Link from "next/link";
 
 const MONTHS = [
   "Jan",
@@ -63,7 +64,7 @@ const itemVariants: Variants = {
   },
 };
 
-const pulseVariants : Variants= {
+const pulseVariants: Variants = {
   animate: {
     boxShadow: [
       "0 0 0 0 rgba(168, 85, 247, 0.4)",
@@ -469,9 +470,11 @@ export default function DashboardPage() {
                 <h3 className="font-extrabold text-xl text-slate-900">
                   Recent Invoices
                 </h3>
-                <button className="text-sm font-bold text-indigo-600 hover:text-indigo-700">
-                  View All
-                </button>
+                <Link href={"/billing?tab=history"}>
+                  <button className="text-sm font-bold text-indigo-600 hover:text-indigo-700 cursor-pointer">
+                    View All
+                  </button>
+                </Link>
               </div>
               <div className="space-y-1">
                 {data?.recentInvoices?.map((inv: any) => (
@@ -540,9 +543,11 @@ export default function DashboardPage() {
                           {p.stock}
                         </p>
                       </div>
-                      <button className="text-xs bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl font-bold transition-colors">
-                        Restock
-                      </button>
+                      <Link href={"/suppliers"}>
+                        <button className="text-xs bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl font-bold transition-colors cursor-pointer">
+                          Restock
+                        </button>
+                      </Link>
                     </div>
                   </div>
                 ))}
