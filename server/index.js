@@ -11,7 +11,7 @@ const app = express();
 // Middleware
 app.use(
   cors({
-    origin: process.env.CLIENT_URL?.split(",") || ["http://localhost:3000"],
+    origin: ["http://localhost:3000", "https://desk-invoice.vercel.app"],
     credentials: true,
   }),
 );
