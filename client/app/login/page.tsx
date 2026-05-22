@@ -72,10 +72,10 @@ export default function LoginPage() {
             <Layers className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-            JS Interiors
+            Desk Invoice
           </h1>
           <p className="text-slate-500 font-medium mt-2 tracking-wide uppercase text-xs">
-            Studio Management Portal
+            Billing Solution for Modern Businesses
           </p>
         </motion.div>
 
