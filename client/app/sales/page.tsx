@@ -146,44 +146,54 @@ export default function SalesPage() {
             </div>
           </motion.div>
 
-          {/* Filters Bar */}
+          {/* Filters Bar - Fully Responsive */}
           <motion.div
             variants={itemVariants}
-            className="flex flex-wrap items-center gap-4 bg-white/70 backdrop-blur-2xl border border-white rounded-3xl p-4 md:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]"
+            className="bg-white/70 backdrop-blur-2xl border border-white rounded-3xl p-4 md:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]"
           >
-            <div className="flex items-center gap-2 pr-4 md:border-r border-slate-200">
-              <Filter className="w-5 h-5 text-indigo-500" />
-              <span className="font-extrabold text-sm text-slate-700">
-                Filters
-              </span>
-            </div>
-
-            <div className="flex-1 flex flex-wrap items-center gap-4">
-              <div className="relative flex items-center">
-                <Calendar className="absolute left-3 w-4 h-4 text-slate-400 z-10 pointer-events-none" />
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white/50 text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all cursor-pointer"
-                />
-              </div>
-              <span className="text-slate-400 font-bold text-sm">to</span>
-              <div className="relative flex items-center">
-                <Calendar className="absolute left-3 w-4 h-4 text-slate-400 z-10 pointer-events-none" />
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white/50 text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all cursor-pointer"
-                />
+            {/* Desktop: Row | Mobile: Column */}
+            <div className="flex flex-col md:flex-row md:items-center gap-4">
+              {/* Header inside Filters */}
+              <div className="flex items-center gap-2 pb-2 md:pb-0 md:pr-4 md:border-r border-slate-200">
+                <Filter className="w-5 h-5 text-indigo-500" />
+                <span className="font-extrabold text-sm text-slate-700 uppercase tracking-wider">
+                  Filters
+                </span>
               </div>
 
-              <div className="ml-auto">
+              {/* Date Inputs & Select Container */}
+              <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-[1fr,auto,1fr,auto] items-center gap-3">
+                {/* Start Date */}
+                <div className="relative flex items-center">
+                  <Calendar className="absolute left-3 w-4 h-4 text-slate-400 z-10" />
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white/50 text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all cursor-pointer"
+                  />
+                </div>
+
+                <span className="text-slate-400 font-bold text-sm text-center">
+                  to
+                </span>
+
+                {/* End Date */}
+                <div className="relative flex items-center">
+                  <Calendar className="absolute left-3 w-4 h-4 text-slate-400 z-10" />
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white/50 text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all cursor-pointer"
+                  />
+                </div>
+
+                {/* Group By Select */}
                 <select
                   value={groupBy}
                   onChange={(e) => setGroupBy(e.target.value)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 bg-white/50 text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all appearance-none cursor-pointer min-w-[120px]"
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-slate-200 bg-white/50 text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all appearance-none cursor-pointer"
                 >
                   <option value="day">Daily View</option>
                   <option value="month">Monthly View</option>
