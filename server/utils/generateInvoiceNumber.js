@@ -1,20 +1,22 @@
 const Settings = require("../models/Settings");
 
 const generateInvoiceNumber = async () => {
-  let settings = await Settings.findOne();
-  if (!settings) {
-    settings = await Settings.create({});
-  }
+  const settings = await Settings.findOneAndUpdate(
+    {},
+    {
+      $inc: { invoiceCounter: 1 },
+      $setOnInsert: { invoicePrefix: "INV" },
+    },
+    {
+      new: false,
+      upsert: true,
+    },
+  );
 
-  const number = settings.invoiceCounter;
-  const prefix = settings.invoicePrefix || "INV";
-  const padded = String(number).padStart(4, "0");
-  const invoiceNumber = `${prefix}-${padded}`;
+  const number = settings?.invoiceCounter ?? 1;
+  const prefix = settings?.invoicePrefix || "INV";
 
-  // Increment counter
-  await Settings.findByIdAndUpdate(settings._id, { $inc: { invoiceCounter: 1 } });
-
-  return invoiceNumber;
+  return `${prefix}-${String(number).padStart(4, "0")}`;
 };
 
 module.exports = generateInvoiceNumber;
