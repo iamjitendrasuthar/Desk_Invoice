@@ -2,8 +2,13 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-// Ensure uploads directory exists
-const uploadDir = path.join(__dirname, "../uploads");
+// Vercel par /tmp writable hota hai, local par uploads folder
+const uploadDir =
+  process.env.NODE_ENV === "production"
+    ? "/tmp/uploads"
+    : path.join(__dirname, "../uploads");
+
+// Folder banao agar nahi hai
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.diskStorage({
@@ -22,6 +27,10 @@ const fileFilter = (req, file, cb) => {
   cb(new Error("Only image files are allowed"));
 };
 
-const upload = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
 
 module.exports = upload;
