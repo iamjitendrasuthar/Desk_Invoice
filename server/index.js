@@ -11,10 +11,25 @@ const app = express();
 // Middleware
 app.use(
   cors({
-    origin: ["http://localhost:3000", "https://desk-invoice.vercel.app"],
+    origin: function (origin, callback) {
+      const allowed = [
+        "http://localhost:3000",
+        "https://desk-invoice.vercel.app",
+      ];
+      if (!origin || allowed.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-auth-token"],
   }),
 );
+
+// ⚠️ Yeh CORS ke baad aana chahiye — preflight OPTIONS requests handle karta hai
+app.options("*", cors());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -44,20 +59,17 @@ app.use((err, req, res, next) => {
   });
 });
 
-// MongoDB Connection
 mongoose
-  .connect(
-    process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/billing_software",
-  )
-  .then(() => {
-    console.log("✅ MongoDB Connected");
-    const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.log("❌ MongoDB Error:", err.message);
+  .connect(process.env.MONGODB_URI)
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch((err) => console.log("❌ MongoDB Error:", err.message));
+
+// Sirf local dev ke liye listen karo
+if (process.env.NODE_ENV !== "production") {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
   });
+}
 
 module.exports = app;
