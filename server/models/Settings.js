@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const settingsSchema = new mongoose.Schema(
   {
-    businessName: { type: String, default: "My Business" },
+    businessName: { type: String, default: "" },
     businessEmail: { type: String, default: "" },
     businessPhone: { type: String, default: "" },
     businessAddress: {
@@ -10,16 +10,16 @@ const settingsSchema = new mongoose.Schema(
       city: { type: String, default: "" },
       state: { type: String, default: "" },
       pincode: { type: String, default: "" },
-      country: { type: String, default: "India" },
+      country: { type: String, default: "" },
     },
     gstin: { type: String, default: "" },
     panNumber: { type: String, default: "" },
     logo: { type: String, default: "" },
-    currency: { type: String, default: "INR" },
-    currencySymbol: { type: String, default: "₹" },
-    invoicePrefix: { type: String, default: "INV" },
-    invoiceCounter: { type: Number, default: 1 },
-    defaultTaxRate: { type: Number, default: 18 },
+    currency: { type: String, default: "" },
+    currencySymbol: { type: String, default: "" },
+    invoicePrefix: { type: String, default: "" },
+    invoiceCounter: { type: Number, default: 1 }, // keep counter as 1, it's functional not display
+    defaultTaxRate: { type: Number, default: null },
     termsAndConditions: { type: String, default: "" },
     bankDetails: {
       bankName: { type: String, default: "" },
@@ -28,7 +28,7 @@ const settingsSchema = new mongoose.Schema(
       accountHolderName: { type: String, default: "" },
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("Settings", settingsSchema);
