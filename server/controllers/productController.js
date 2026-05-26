@@ -1,4 +1,5 @@
 const Product = require("../models/Product");
+const { notifyLowStock } = require("../services/notificationService");
 
 const getProducts = async (req, res) => {
   try {
@@ -14,7 +15,7 @@ const getProducts = async (req, res) => {
     }
     if (category) filter.category = category;
     if (isActive !== undefined) filter.isActive = isActive === "true";
-    else filter.isActive = true; // default: only active
+    else filter.isActive = true;
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const total = await Product.countDocuments(filter);
@@ -80,7 +81,7 @@ const createProduct = async (req, res) => {
           .json({ success: false, message: "SKU already exists" });
     }
 
-    const rate = gstRate ?? taxRate ?? 0; // accept both field names
+    const rate = gstRate ?? taxRate ?? 0;
     const image = req.file ? `/uploads/${req.file.filename}` : "";
 
     const product = await Product.create({
@@ -98,6 +99,12 @@ const createProduct = async (req, res) => {
       lowStockAlert,
       image,
     });
+
+    // 🔔 Agar product create hote waqt hi stock low ho (e.g. opening stock add kiya)
+    const threshold = product.lowStockAlert ?? 10;
+    if (product.stock <= threshold) {
+      notifyLowStock(product, threshold);
+    }
 
     res
       .status(201)
@@ -124,6 +131,15 @@ const updateProduct = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "Product not found" });
+
+    // 🔔 Stock manually update hua — low stock check karo
+    // Sirf tab fire karo jab stock field update hui ho
+    if (updates.stock !== undefined) {
+      const threshold = product.lowStockAlert ?? 10;
+      if (product.stock <= threshold) {
+        notifyLowStock(product, threshold);
+      }
+    }
 
     res.json({ success: true, message: "Product updated", data: product });
   } catch (err) {

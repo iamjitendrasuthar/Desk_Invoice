@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useAuthStore } from "@/store/authStore";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -35,9 +36,8 @@ export default function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const SidebarContent = () => (
-    // FIX: pb-8 add kiya gaya hai taaki bottom se ek extra margin rahe
     <div className="flex flex-col h-full bg-white/90 backdrop-blur-3xl pb-8">
-      {/* --- Premium Logo Section with Mobile Close Button --- */}
+      {/* --- Logo + Mobile Close --- */}
       <div className="flex items-center justify-between px-6 py-8">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-500/20">
@@ -53,7 +53,6 @@ export default function Sidebar() {
           </div>
         </div>
 
-        {/* Mobile Sidebar Close Button (Right side ke liye adjusted) */}
         <button
           onClick={() => setMobileOpen(false)}
           className="lg:hidden p-2.5 -mr-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-2xl transition-all"
@@ -62,7 +61,7 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* --- Navigation Links --- */}
+      {/* --- Nav Links --- */}
       <nav className="flex-1 px-4 py-2 space-y-1.5 overflow-y-auto custom-scrollbar">
         {navItems.map(({ href, icon: Icon, label }) => {
           const active = pathname.startsWith(href);
@@ -78,11 +77,9 @@ export default function Sidebar() {
                   : "text-slate-500 font-medium hover:text-slate-900 hover:bg-slate-50 hover:scale-[1.02]",
               )}
             >
-              {/* Active Indicator Line */}
               {active && (
                 <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-indigo-500 rounded-r-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
               )}
-
               <Icon
                 className={cn(
                   "w-5 h-5 flex-shrink-0 transition-colors",
@@ -92,7 +89,6 @@ export default function Sidebar() {
                 )}
               />
               <span className="flex-1">{label}</span>
-
               {active && <ChevronRight className="w-4 h-4 text-indigo-400" />}
             </Link>
           );
@@ -130,9 +126,10 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* PREMIUM FULL-WIDTH MOBILE TOP BAR */}
+      {/* ── MOBILE TOP BAR ── */}
       {!mobileOpen && (
         <div className="lg:hidden fixed top-0 inset-x-0 w-full z-50 bg-white/85 backdrop-blur-2xl border-b border-slate-200/60 px-4 sm:px-6 py-3.5 flex items-center justify-between shadow-[0_4px_20px_rgb(0,0,0,0.04)]">
+          {/* Left — Logo + Name */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-md shadow-indigo-500/20">
               <span className="text-white font-extrabold text-sm tracking-wider">
@@ -149,16 +146,20 @@ export default function Sidebar() {
             </div>
           </div>
 
-          <button
-            onClick={() => setMobileOpen(true)}
-            className="p-2.5 bg-slate-50 text-slate-700 rounded-xl border border-slate-200/60 shadow-sm hover:bg-white hover:text-indigo-600 transition-all active:scale-95"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
+          {/* Right — Bell + Hamburger */}
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="p-2.5 bg-slate-50 text-slate-700 rounded-xl border border-slate-200/60 shadow-sm hover:bg-white hover:text-indigo-600 transition-all active:scale-95"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Mobile overlay with slight blur */}
+      {/* Mobile overlay */}
       {mobileOpen && (
         <div
           className="lg:hidden fixed inset-0 z-40 bg-slate-900/10 backdrop-blur-sm transition-opacity duration-300"
@@ -171,7 +172,7 @@ export default function Sidebar() {
         <SidebarContent />
       </aside>
 
-      {/* Mobile sidebar (Right side opening with custom easing) */}
+      {/* Mobile sidebar (right side) */}
       <aside
         className={cn(
           "lg:hidden flex flex-col w-[85%] max-w-sm bg-white fixed inset-y-0 right-0 z-50 transform transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] shadow-[-10px_0_40px_rgba(0,0,0,0.08)]",

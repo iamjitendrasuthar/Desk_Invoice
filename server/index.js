@@ -44,6 +44,7 @@ app.use("/api/settings", require("./routes/settingsRoutes"));
 app.use("/api/suppliers", require("./routes/supplierRoutes"));
 const salesRoutes = require("./routes/salesRoutes");
 app.use("/api/sales", salesRoutes);
+app.use("/api/notifications", require("./routes/notificationRoutes"));
 
 // Health Check
 app.get("/api/health", (req, res) => {

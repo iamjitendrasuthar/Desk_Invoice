@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 export const metadata: Metadata = {
   title: "Desk Invoice | Smart Billing & Inventory Software",
@@ -44,7 +45,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {" "}
+        <NotificationBell />
+        {children}
+      </body>
     </html>
   );
 }

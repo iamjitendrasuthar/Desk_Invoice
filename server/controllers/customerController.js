@@ -1,4 +1,5 @@
 const Customer = require("../models/Customer");
+const { notifyCustomerAdded } = require("../services/notificationService");
 
 // @desc   Get all customers (with order count and total spent)
 // @route  GET /api/customers
@@ -18,37 +19,24 @@ const getCustomers = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const total = await Customer.countDocuments(filter);
 
-    // FIX: Using aggregation to fetch order details from the 'invoices' collection
     const customers = await Customer.aggregate([
       { $match: filter },
-
-      // Link with Invoices collection
       {
         $lookup: {
-          from: "invoices", // Database mein collection ka naam
+          from: "invoices",
           localField: "_id",
           foreignField: "customer",
           pipeline: [{ $match: { type: "sale", isActive: true } }],
           as: "customerOrders",
         },
       },
-
-      // Calculate total orders & purchases
       {
         $addFields: {
           totalOrders: { $size: "$customerOrders" },
           totalPurchases: { $sum: "$customerOrders.grandTotal" },
         },
       },
-
-      // Remove the heavy array to keep API fast
-      {
-        $project: {
-          customerOrders: 0,
-        },
-      },
-
-      // Sorting & Pagination (Aapka purana logic)
+      { $project: { customerOrders: 0 } },
       { $sort: { name: 1 } },
       { $skip: skip },
       { $limit: parseInt(limit) },
@@ -110,6 +98,10 @@ const createCustomer = async (req, res) => {
       creditLimit,
       notes,
     });
+
+    // 🔔 Notification fire karo — async, response ko block nahi karega
+    notifyCustomerAdded(customer);
+
     res
       .status(201)
       .json({ success: true, message: "Customer created", data: customer });

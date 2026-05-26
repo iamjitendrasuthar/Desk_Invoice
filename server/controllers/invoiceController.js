@@ -2,6 +2,12 @@ const Invoice = require("../models/Invoice");
 const Product = require("../models/Product");
 const Customer = require("../models/Customer");
 const generateInvoiceNumber = require("../utils/generateInvoiceNumber");
+const {
+  notifyPaymentReceived,
+  notifyLowStock,
+} = require("../services/notificationService");
+
+const LOW_STOCK_THRESHOLD = 10; // Yahan apna threshold change kar sakte ho
 
 // Helper: calculate invoice totals
 const calculateTotals = (items) => {
@@ -101,8 +107,6 @@ const getInvoice = async (req, res) => {
   }
 };
 
-
-
 // @desc   Update invoice
 // @route  PUT /api/invoices/:id
 const updateInvoice = async (req, res) => {
@@ -181,6 +185,9 @@ const recordPayment = async (req, res) => {
     if (paymentMethod) invoice.paymentMethod = paymentMethod;
     await invoice.save();
 
+    // 🔔 Payment notification — har payment par fire karo
+    notifyPaymentReceived(invoice, parseFloat(amount));
+
     // Update customer outstanding balance
     if (invoice.customer) {
       const paid = Math.min(parseFloat(amount), prevBalance);
@@ -195,11 +202,9 @@ const recordPayment = async (req, res) => {
   }
 };
 
-
 // CREATE INVOICE
 const createInvoice = async (req, res) => {
   try {
-    // Extracted customerName and customerPhone
     const {
       customer,
       customerName,
@@ -248,9 +253,17 @@ const createInvoice = async (req, res) => {
     if (type === "sale") {
       for (const item of processedItems) {
         if (item.product) {
-          await Product.findByIdAndUpdate(item.product, {
-            $inc: { stock: -item.quantity },
-          });
+          // Stock deduct karo aur updated product fetch karo
+          const updatedProduct = await Product.findByIdAndUpdate(
+            item.product,
+            { $inc: { stock: -item.quantity } },
+            { new: true }, // updated document wapas lo
+          );
+
+          // 🔔 Low stock check — agar stock threshold ke andar aa gaya
+          if (updatedProduct && updatedProduct.stock <= LOW_STOCK_THRESHOLD) {
+            notifyLowStock(updatedProduct, LOW_STOCK_THRESHOLD);
+          }
         }
       }
     }
@@ -261,6 +274,11 @@ const createInvoice = async (req, res) => {
       });
     }
 
+    // 🔔 Agar invoice create karte waqt hi full payment ho gayi (amountPaid >= grandTotal)
+    if (parseFloat(amountPaid) >= grandTotal && grandTotal > 0) {
+      notifyPaymentReceived(invoice, parseFloat(amountPaid));
+    }
+
     res
       .status(201)
       .json({ success: true, message: "Invoice created", data: invoice });
@@ -269,7 +287,7 @@ const createInvoice = async (req, res) => {
   }
 };
 
-// PDF GENERATOR FIX
+// PDF GENERATOR
 const downloadInvoicePDF = async (req, res) => {
   try {
     const PDFDocument = require("pdfkit");
@@ -294,7 +312,6 @@ const downloadInvoicePDF = async (req, res) => {
     );
     doc.pipe(res);
 
-    // Header
     doc
       .fontSize(20)
       .text(settings.businessName || "JS Interiors", { align: "left" });
@@ -315,7 +332,6 @@ const downloadInvoicePDF = async (req, res) => {
     doc.moveDown();
     doc.fontSize(12).text("Bill To:");
 
-    // FIX: Safely fallback to customerName if customer ref isn't available
     if (invoice.customer) {
       doc.fontSize(10).text(invoice.customer.name);
       if (invoice.customer.phone) doc.text(invoice.customer.phone);
@@ -326,7 +342,6 @@ const downloadInvoicePDF = async (req, res) => {
 
     doc.moveDown();
 
-    // Table
     const tableTop = doc.y;
     doc.font("Helvetica-Bold").fontSize(10);
     doc.text("#", 50, tableTop);
