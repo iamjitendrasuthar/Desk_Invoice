@@ -39,7 +39,6 @@ const initForm = {
   notes: "",
 };
 
-// Framer Motion Variants
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
   show: {
@@ -49,11 +48,10 @@ const containerVariants: Variants = {
 };
 
 const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 15, scale: 0.98 },
+  hidden: { opacity: 0, y: 15 },
   show: {
     opacity: 1,
     y: 0,
-    scale: 1,
     transition: { type: "spring", stiffness: 400, damping: 30 },
   },
 };
@@ -64,10 +62,11 @@ const modalVariants: Variants = {
     opacity: 1,
     scale: 1,
     y: 0,
-    transition: { type: "spring", damping: 30, stiffness: 400 }, // stiffness 300→400
+    transition: { type: "spring", damping: 30, stiffness: 400 },
   },
-  exit: { opacity: 0, scale: 0.97, y: -10, transition: { duration: 0.15 } }, // duration 0.2→0.15
+  exit: { opacity: 0, scale: 0.97, y: -10, transition: { duration: 0.15 } },
 };
+
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,18 +80,10 @@ export default function CustomersPage() {
 
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
-
     try {
-      const params: any = {
-        page,
-        limit: 15,
-      };
-
+      const params: any = { page, limit: 15 };
       if (search) params.search = search;
-
       const r = await api.get("/customers", { params });
-
-      // SAFE ARRAY HANDLING
       const customerList = Array.isArray(r?.data?.customers)
         ? r.data.customers
         : Array.isArray(r?.data?.data)
@@ -100,16 +91,12 @@ export default function CustomersPage() {
           : Array.isArray(r?.data)
             ? r.data
             : [];
-
       setCustomers(customerList);
-
       setTotal(
         typeof r?.data?.total === "number" ? r.data.total : customerList.length,
       );
     } catch (error) {
       console.error("Customers fetch error:", error);
-
-      // IMPORTANT
       setCustomers([]);
       setTotal(0);
     } finally {
@@ -126,7 +113,6 @@ export default function CustomersPage() {
     setForm(initForm);
     setShowModal(true);
   };
-
   const openEdit = (c: Customer) => {
     setEditCustomer(c);
     setForm({
@@ -163,18 +149,15 @@ export default function CustomersPage() {
 
   return (
     <AppLayout>
-      {/* Light Background with Soft Pastel Orbs */}
-      <div className="relative min-h-screen bg-[#f8fafc] text-slate-900 overflow-hidden rounded-3xl font-sans">
-        <div className="absolute top-[-5%] right-[-5%] w-[500px] h-[500px] rounded-full bg-indigo-400/10 blur-[130px] pointer-events-none" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] rounded-full bg-purple-400/10 blur-[140px] pointer-events-none" />
-
+      {/* ✅ blur orbs hataye — mobile pe heavy the */}
+      <div className="relative min-h-screen bg-[#f8fafc] text-slate-900 font-sans">
         <motion.div
           className="relative z-10 max-w-7xl mx-auto space-y-6 p-4 sm:p-6 lg:p-8"
           variants={containerVariants}
           initial="hidden"
           animate="show"
         >
-          {/* Header Section */}
+          {/* Header */}
           <motion.div
             variants={itemVariants}
             className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-2"
@@ -183,23 +166,22 @@ export default function CustomersPage() {
               <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
                 Client Roster
               </h1>
-              <p className="text-slate-500 text-sm font-medium mt-2 flex items-center gap-2">
+              <p className="text-slate-500 text-sm font-medium mt-2">
                 Managing{" "}
                 <span className="font-bold text-slate-700">
                   {total} active clients
                 </span>
               </p>
             </div>
-
             <button
               onClick={openAdd}
-              className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:-translate-y-0.5 transition-all duration-300"
+              className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/30 hover:-translate-y-0.5 transition-all duration-200"
             >
               <Plus className="w-4 h-4 stroke-[3]" /> Add Client
             </button>
           </motion.div>
 
-          {/* Search Bar */}
+          {/* Search Bar — ✅ backdrop-blur hataya */}
           <motion.div variants={itemVariants} className="relative max-w-md">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
@@ -208,20 +190,20 @@ export default function CustomersPage() {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              className="w-full pl-11 pr-4 py-3 rounded-2xl border border-white bg-white/70 backdrop-blur-xl text-sm font-medium text-slate-900 shadow-[0_4px_20px_rgb(0,0,0,0.03)] focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-400"
+              className="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-200 bg-white text-sm font-medium text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-400"
               placeholder="Search clients by name, email, or phone..."
             />
           </motion.div>
 
-          {/* Data Table */}
+          {/* Table — ✅ backdrop-blur-2xl hataya */}
           <motion.div
             variants={itemVariants}
-            className="bg-white/70 backdrop-blur-2xl border border-white rounded-3xl p-2 md:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]"
+            className="bg-white border border-slate-100 rounded-3xl p-2 md:p-6 shadow-sm"
           >
-            <div className="overflow-x-auto rounded-2xl border border-slate-100 bg-white">
+            <div className="overflow-x-auto rounded-2xl border border-slate-100">
               <table className="w-full text-left border-collapse min-w-[800px]">
                 <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-100">
+                  <tr className="bg-slate-50 border-b border-slate-100">
                     <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-wider">
                       Customer
                     </th>
@@ -249,7 +231,7 @@ export default function CustomersPage() {
                         <div className="inline-flex items-center justify-center w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin" />
                       </td>
                     </tr>
-                  ) : !customers || customers.length === 0 ? (
+                  ) : customers.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="text-center py-16">
                         <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -264,14 +246,14 @@ export default function CustomersPage() {
                       </td>
                     </tr>
                   ) : (
-                    (customers || []).map((c) => (
+                    customers.map((c) => (
                       <tr
                         key={c._id}
                         className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors group"
                       >
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 text-indigo-600 border border-indigo-100/50 flex items-center justify-center text-sm font-extrabold shadow-sm group-hover:scale-105 transition-transform">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100/50 flex items-center justify-center text-sm font-extrabold">
                               {c.name[0].toUpperCase()}
                             </div>
                             <div>
@@ -310,7 +292,7 @@ export default function CustomersPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <span className="text-sm font-extrabold text-slate-900 bg-slate-50 px-3 py-1.5 rounded-lg group-hover:bg-white group-hover:shadow-sm transition-all">
+                          <span className="text-sm font-extrabold text-slate-900 bg-slate-50 px-3 py-1.5 rounded-lg">
                             {formatCurrency(c.totalPurchases)}
                           </span>
                         </td>
@@ -352,10 +334,11 @@ export default function CustomersPage() {
         </motion.div>
       </div>
 
-      {/* Add / Edit Modal Overlay */}
+      {/* Modal */}
       <AnimatePresence>
         {showModal && (
           <>
+            {/* ✅ backdrop-blur hataya overlay se */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -371,8 +354,8 @@ export default function CustomersPage() {
                 exit="exit"
                 className="bg-white rounded-3xl border border-slate-100 shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pointer-events-auto flex flex-col"
               >
-                {/* Modal Header */}
-                <div className="flex items-center justify-between p-6 md:p-8 border-b border-slate-100 bg-slate-50/80 sticky top-0 z-10">
+                {/* Modal Header — ✅ backdrop-blur hataya */}
+                <div className="flex items-center justify-between p-6 md:p-8 border-b border-slate-100 bg-slate-50 sticky top-0 z-10">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100">
                       <Briefcase className="w-6 h-6" />
@@ -390,15 +373,14 @@ export default function CustomersPage() {
                   </div>
                   <button
                     onClick={() => setShowModal(false)}
-                    className="p-2 bg-white hover:bg-slate-100 text-slate-400 hover:text-slate-600 border border-slate-200 rounded-xl transition-all shadow-sm hover:shadow"
+                    className="p-2 bg-white hover:bg-slate-100 text-slate-400 hover:text-slate-600 border border-slate-200 rounded-xl transition-all"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
-                {/* Modal Body (Form) */}
+                {/* Modal Body */}
                 <div className="p-6 md:p-8 space-y-6">
-                  {/* Grid 1: Basic Info */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div className="md:col-span-2">
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
@@ -450,10 +432,7 @@ export default function CustomersPage() {
                         type="text"
                         value={form.gstin}
                         onChange={(e) =>
-                          setForm((p: any) => ({
-                            ...p,
-                            gstin: e.target.value,
-                          }))
+                          setForm((p: any) => ({ ...p, gstin: e.target.value }))
                         }
                         className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all uppercase"
                         placeholder="22AAAAA0000A1Z5"
@@ -479,7 +458,6 @@ export default function CustomersPage() {
 
                   <div className="h-px w-full bg-slate-100" />
 
-                  {/* Grid 2: Address */}
                   <div>
                     <h3 className="flex items-center gap-2 text-sm font-extrabold text-slate-800 mb-4">
                       <MapPin className="w-4 h-4 text-indigo-500" /> Location
@@ -557,18 +535,18 @@ export default function CustomersPage() {
                   </div>
                 </div>
 
-                {/* Modal Footer (Actions) */}
-                <div className="flex gap-4 p-6 md:p-8 border-t border-slate-100 bg-slate-50/50 mt-auto rounded-b-3xl">
+                {/* Modal Footer */}
+                <div className="flex gap-4 p-6 md:p-8 border-t border-slate-100 bg-slate-50 mt-auto rounded-b-3xl">
                   <button
                     onClick={() => setShowModal(false)}
-                    className="flex-1 px-6 py-3.5 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 shadow-sm transition-all"
+                    className="flex-1 px-6 py-3.5 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="flex-1 px-6 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-bold shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none transition-all duration-300"
+                    className="flex-1 px-6 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-bold shadow-lg shadow-indigo-500/30 hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0 transition-all duration-200"
                   >
                     {saving
                       ? "Saving..."
