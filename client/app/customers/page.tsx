@@ -48,7 +48,7 @@ const containerVariants: Variants = {
   },
 };
 
-const itemVariants : Variants= {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 15, scale: 0.98 },
   show: {
     opacity: 1,
@@ -58,17 +58,16 @@ const itemVariants : Variants= {
   },
 };
 
-const modalVariants : Variants= {
-  hidden: { opacity: 0, scale: 0.95, y: 20 },
+const modalVariants: Variants = {
+  hidden: { opacity: 0, scale: 0.97, y: 10 },
   visible: {
     opacity: 1,
     scale: 1,
     y: 0,
-    transition: { type: "spring", damping: 25, stiffness: 300 },
+    transition: { type: "spring", damping: 30, stiffness: 400 }, // stiffness 300→400
   },
-  exit: { opacity: 0, scale: 0.95, y: -20, transition: { duration: 0.2 } },
+  exit: { opacity: 0, scale: 0.97, y: -10, transition: { duration: 0.15 } }, // duration 0.2→0.15
 };
-
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -361,7 +360,7 @@ export default function CustomersPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-slate-900/20 backdrop-blur-sm"
+              className="fixed inset-0 z-40 bg-slate-900/40"
               onClick={() => setShowModal(false)}
             />
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
@@ -370,10 +369,10 @@ export default function CustomersPage() {
                 initial="hidden"
                 animate="visible"
                 exit="exit"
-                className="bg-white rounded-3xl border border-white shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pointer-events-auto flex flex-col"
+                className="bg-white rounded-3xl border border-slate-100 shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pointer-events-auto flex flex-col"
               >
                 {/* Modal Header */}
-                <div className="flex items-center justify-between p-6 md:p-8 border-b border-slate-100 bg-slate-50/50 sticky top-0 z-10 backdrop-blur-xl">
+                <div className="flex items-center justify-between p-6 md:p-8 border-b border-slate-100 bg-slate-50/80 sticky top-0 z-10">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100">
                       <Briefcase className="w-6 h-6" />
