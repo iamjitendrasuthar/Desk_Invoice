@@ -1,4 +1,4 @@
-// hooks/useNotifications.js
+"use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   fetchNotifications,
@@ -44,8 +44,10 @@ const playNotificationSound = () => {
     // Sound supported nahi hai toh silently ignore
   }
 };
+/** @typedef {import("@/types/notification").Notification} AppNotification */
 
 export function useNotifications() {
+  /** @type {[AppNotification[], React.Dispatch<React.SetStateAction<AppNotification[]>>]} */
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);

@@ -1,6 +1,4 @@
 "use client";
-// components/NotificationBell.tsx
-// Drop this anywhere in your navbar/AppLayout header
 
 import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,6 +14,7 @@ import {
   BellOff,
 } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
+import type { Notification as AppNotification } from "@/types/notification";
 
 // ── Type icon + color per notification type ────────────────────────────────
 const TYPE_CONFIG = {
@@ -92,8 +91,8 @@ export default function NotificationBell() {
     return () => document.removeEventListener("mousedown", handler);
   }, [close]);
 
-  const hasRead = notifications.some((n) => n.isRead);
-
+  const typedNotifications = notifications as AppNotification[];
+  const hasRead = typedNotifications.some((n) => n.isRead);
   return (
     <div ref={wrapperRef} className="relative">
       {/* ── Bell Button ─────────────────────────────────────────────────── */}
