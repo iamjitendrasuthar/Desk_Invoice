@@ -7,15 +7,31 @@ import {
   deleteNotification as apiDelete,
   clearReadNotifications as apiClearRead,
 } from "@/services/notificationService";
+import { useNotificationToastStore } from "@/store/notificationToastStore";
 
-const POLL_INTERVAL = 5_000; // 5 seconds
+const POLL_INTERVAL = 5_000;
 
-// 🔔 Web Audio API se ding sound generate karo (no external file needed)
+// ✅ Module level — saare hook instances share karenge
+const toastedIds = new Set();
+let isInitialLoadDone = false;
+let audioCtxUnlocked = false;
+
+const unlockAudio = () => {
+  if (audioCtxUnlocked) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const buf = ctx.createBuffer(1, 1, 22050);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+    audioCtxUnlocked = true;
+  } catch (_) {}
+};
+
 const playNotificationSound = () => {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-
-    // Pehla tone — high ding
     const o1 = ctx.createOscillator();
     const g1 = ctx.createGain();
     o1.connect(g1);
@@ -27,8 +43,6 @@ const playNotificationSound = () => {
     g1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
     o1.start(ctx.currentTime);
     o1.stop(ctx.currentTime + 0.4);
-
-    // Doosra tone — low ding (slight delay)
     const o2 = ctx.createOscillator();
     const g2 = ctx.createGain();
     o2.connect(g2);
@@ -40,20 +54,34 @@ const playNotificationSound = () => {
     g2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
     o2.start(ctx.currentTime + 0.1);
     o2.stop(ctx.currentTime + 0.5);
-  } catch (_) {
-    // Sound supported nahi hai toh silently ignore
-  }
+  } catch (_) {}
 };
-/** @typedef {import("@/types/notification").Notification} AppNotification */
 
 export function useNotifications() {
-  /** @type {[AppNotification[], React.Dispatch<React.SetStateAction<AppNotification[]>>]} */
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+
   const timerRef = useRef(null);
-  const prevCountRef = useRef(null); // pichla unread count track karo
+  const prevCountRef = useRef(null);
+
+  const addToastRef = useRef(null);
+  const { addToast } = useNotificationToastStore();
+
+  useEffect(() => {
+    addToastRef.current = addToast;
+  }, [addToast]);
+
+  // iOS audio unlock
+  useEffect(() => {
+    window.addEventListener("touchstart", unlockAudio, { once: true });
+    window.addEventListener("click", unlockAudio, { once: true });
+    return () => {
+      window.removeEventListener("touchstart", unlockAudio);
+      window.removeEventListener("click", unlockAudio);
+    };
+  }, []);
 
   const load = useCallback(async (silent = false) => {
     try {
@@ -62,8 +90,25 @@ export function useNotifications() {
       setNotifications(data.notifications);
       setUnreadCount(data.unreadCount);
 
-      // 🔔 Sound: sirf tab bajao jab naya notification aaya ho (polling ke time)
-      // prevCountRef.current === null matlab initial load hai — sound mat bajao
+      if (!isInitialLoadDone) {
+        // Initial load — seed karo, toast nahi
+        data.notifications.forEach((n) => toastedIds.add(n._id));
+        isInitialLoadDone = true;
+      } else {
+        // Polling — sirf naye IDs ka toast
+        data.notifications.forEach((n) => {
+          if (!toastedIds.has(n._id)) {
+            toastedIds.add(n._id);
+            addToastRef.current?.({
+              type: n.type,
+              title: n.title,
+              message: n.message,
+              duration: 4000,
+            });
+          }
+        });
+      }
+
       if (
         silent &&
         prevCountRef.current !== null &&
@@ -72,21 +117,19 @@ export function useNotifications() {
         playNotificationSound();
       }
       prevCountRef.current = data.unreadCount;
-    } catch (_) {
-      // silently fail on poll errors
+    } catch (err) {
+      console.error("load error", err);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Initial load + polling
   useEffect(() => {
     load();
     timerRef.current = setInterval(() => load(true), POLL_INTERVAL);
     return () => clearInterval(timerRef.current);
   }, [load]);
 
-  // Mark one read
   const markOneRead = useCallback(async (id) => {
     setNotifications((prev) =>
       prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)),
@@ -99,7 +142,6 @@ export function useNotifications() {
     await apiMarkOneRead(id);
   }, []);
 
-  // Mark all read
   const markAllRead = useCallback(async () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
     setUnreadCount(0);
@@ -107,7 +149,6 @@ export function useNotifications() {
     await apiMarkAllRead();
   }, []);
 
-  // Delete one
   const deleteOne = useCallback(
     async (id) => {
       const target = notifications.find((n) => n._id === id);
@@ -124,7 +165,6 @@ export function useNotifications() {
     [notifications],
   );
 
-  // Clear all read
   const clearRead = useCallback(async () => {
     setNotifications((prev) => prev.filter((n) => !n.isRead));
     await apiClearRead();

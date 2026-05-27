@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import { useAuthStore } from "@/store/authStore";
 import NotificationBell from "@/components/notifications/NotificationBell";
+import NotificationToast from "../notifications/NotificationToast";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { token, loadUser } = useAuthStore();
@@ -26,12 +27,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <header className="hidden lg:flex fixed top-0 right-0 left-72 h-[66px] bg-white/80 backdrop-blur-md border-b border-slate-100 z-30 items-center justify-end px-6">
         <NotificationBell />
       </header>
-
       <Sidebar />
-
       <main className="lg:pl-72 pt-[66px]">
         <div className="min-h-screen p-4">{children}</div>
-      </main>
+      </main>{" "}
+      <NotificationToast />
     </div>
   );
 }
