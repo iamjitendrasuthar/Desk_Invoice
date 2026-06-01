@@ -146,7 +146,7 @@ export default function DashboardPage() {
           >
             <div>
               <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 mb-2">
-                Business Overview
+                Overview
               </h1>
               <p className="text-slate-500 text-sm flex items-center gap-2 font-medium">
                 {new Date().toLocaleDateString("en-IN", {
