@@ -28,7 +28,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <NotificationBell />
       </header>
       <Sidebar />
-      <main className="lg:pl-72 pt-[66px]">
+      <main className="lg:pl-72 pt-[25px]">
         <div className="min-h-screen p-4">{children}</div>
       </main>{" "}
       <NotificationToast />
