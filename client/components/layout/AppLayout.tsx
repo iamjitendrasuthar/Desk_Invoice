@@ -22,8 +22,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [token, router]);
 
   return (
-    <div className="min-h-screen bg-background">
-    
+    <div className="min-h-screen bg-background mt-10">
       <div className="hidden lg:block">
         <header className="fixed top-0 right-0 left-72 h-[66px] bg-white/80 backdrop-blur-md border-b border-slate-100 z-30 flex items-center justify-end px-6">
           <NotificationBell />

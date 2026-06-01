@@ -6,14 +6,13 @@ import {
   markAllRead as apiMarkAllRead,
   deleteNotification as apiDelete,
   clearReadNotifications as apiClearRead,
+  isAuthenticated,
 } from "@/services/notificationService";
 import { useNotificationToastStore } from "@/store/notificationToastStore";
 
 const POLL_INTERVAL = 5_000;
 
-// ✅ Module level — saare hook instances share karenge
-const toastedIds = new Set();
-let isInitialLoadDone = false;
+// Module-level audio state is fine — not auth-sensitive
 let audioCtxUnlocked = false;
 
 const unlockAudio = () => {
@@ -66,6 +65,10 @@ export function useNotifications() {
   const timerRef = useRef(null);
   const prevCountRef = useRef(null);
 
+  // ✅ Moved into refs — reset cleanly per hook instance lifetime
+  const toastedIdsRef = useRef(new Set());
+  const isInitialLoadDoneRef = useRef(false);
+
   const addToastRef = useRef(null);
   const { addToast } = useNotificationToastStore();
 
@@ -73,7 +76,6 @@ export function useNotifications() {
     addToastRef.current = addToast;
   }, [addToast]);
 
-  // iOS audio unlock
   useEffect(() => {
     window.addEventListener("touchstart", unlockAudio, { once: true });
     window.addEventListener("click", unlockAudio, { once: true });
@@ -84,21 +86,26 @@ export function useNotifications() {
   }, []);
 
   const load = useCallback(async (silent = false) => {
+    // ✅ Don't attempt fetch — and don't start the interval — until authed
+    if (!isAuthenticated()) {
+      setLoading(false);
+      return;
+    }
+
     try {
       if (!silent) setLoading(true);
       const data = await fetchNotifications();
       setNotifications(data.notifications);
       setUnreadCount(data.unreadCount);
 
-      if (!isInitialLoadDone) {
-        // Initial load — seed karo, toast nahi
-        data.notifications.forEach((n) => toastedIds.add(n._id));
-        isInitialLoadDone = true;
+      if (!isInitialLoadDoneRef.current) {
+        // Seed existing IDs — no toasts on first load
+        data.notifications.forEach((n) => toastedIdsRef.current.add(n._id));
+        isInitialLoadDoneRef.current = true;
       } else {
-        // Polling — sirf naye IDs ka toast
         data.notifications.forEach((n) => {
-          if (!toastedIds.has(n._id)) {
-            toastedIds.add(n._id);
+          if (!toastedIdsRef.current.has(n._id)) {
+            toastedIdsRef.current.add(n._id);
             addToastRef.current?.({
               type: n.type,
               title: n.title,
@@ -118,7 +125,9 @@ export function useNotifications() {
       }
       prevCountRef.current = data.unreadCount;
     } catch (err) {
-      console.error("load error", err);
+      // ✅ Distinguish auth errors from real fetch failures
+      if (err.message === "Not authenticated") return;
+      console.error("Notification load error:", err);
     } finally {
       setLoading(false);
     }
@@ -127,7 +136,13 @@ export function useNotifications() {
   useEffect(() => {
     load();
     timerRef.current = setInterval(() => load(true), POLL_INTERVAL);
-    return () => clearInterval(timerRef.current);
+    return () => {
+      clearInterval(timerRef.current);
+      // ✅ Reset per-instance state on unmount (handles logout/remount)
+      isInitialLoadDoneRef.current = false;
+      toastedIdsRef.current = new Set();
+      prevCountRef.current = null;
+    };
   }, [load]);
 
   const markOneRead = useCallback(async (id) => {

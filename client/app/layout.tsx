@@ -47,7 +47,6 @@ export default function RootLayout({
     <html lang="en">
       <body>
         {" "}
-        <NotificationBell />
         {children}
       </body>
     </html>
