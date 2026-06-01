@@ -30,14 +30,22 @@ const navItems = [
   { href: "/settings", icon: Settings, label: "Settings" },
 ];
 
-export default function Sidebar() {
-  const pathname = usePathname();
-  const { user, logout } = useAuthStore();
-  const [mobileOpen, setMobileOpen] = useState(false);
+interface SidebarContentProps {
+  pathname: string;
+  user: { name?: string; role?: string } | null;
+  logout: () => void;
+  onClose: () => void;
+}
 
-  const SidebarContent = () => (
+function SidebarContent({
+  pathname,
+  user,
+  logout,
+  onClose,
+}: SidebarContentProps) {
+  return (
     <div className="flex flex-col h-full bg-white/90 backdrop-blur-3xl pb-8">
-      {/* --- Logo + Mobile Close --- */}
+      {/* Logo + Mobile Close */}
       <div className="flex items-center justify-between px-6 py-8">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-500/20">
@@ -54,14 +62,14 @@ export default function Sidebar() {
         </div>
 
         <button
-          onClick={() => setMobileOpen(false)}
+          onClick={onClose}
           className="lg:hidden p-2.5 -mr-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-2xl transition-all"
         >
           <X className="w-5 h-5" />
         </button>
       </div>
 
-      {/* --- Nav Links --- */}
+      {/* Nav Links */}
       <nav className="flex-1 px-4 py-2 space-y-1.5 overflow-y-auto custom-scrollbar">
         {navItems.map(({ href, icon: Icon, label }) => {
           const active = pathname.startsWith(href);
@@ -69,7 +77,7 @@ export default function Sidebar() {
             <Link
               key={href}
               href={href}
-              onClick={() => setMobileOpen(false)}
+              onClick={onClose}
               className={cn(
                 "flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm transition-all duration-300 group relative",
                 active
@@ -95,7 +103,7 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* --- User Profile & Logout --- */}
+      {/* User Profile & Logout */}
       <div className="p-4 mt-auto">
         <div className="bg-slate-50/80 border border-slate-100/80 rounded-3xl p-4 shadow-sm backdrop-blur-xl">
           <div className="flex items-center gap-3 mb-4">
@@ -123,30 +131,37 @@ export default function Sidebar() {
       </div>
     </div>
   );
+}
+
+export default function Sidebar() {
+  const pathname = usePathname();
+  const { user, logout } = useAuthStore();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <>
-      {/* ── MOBILE TOP BAR ── */}
+      {/* Mobile Top Bar — ✅ NotificationBell NAHI hai yahan */}
       {!mobileOpen && (
         <div className="lg:hidden fixed top-0 inset-x-0 w-full z-50 bg-white/85 backdrop-blur-2xl border-b border-slate-200/60 px-4 sm:px-6 py-3.5 flex items-center justify-between shadow-[0_4px_20px_rgb(0,0,0,0.04)]">
-          {/* Left — Logo + Name */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-md shadow-indigo-500/20">
-              <span className="text-white font-extrabold text-sm tracking-wider">
-                JS
-              </span>
+          <Link href={"/"}>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-md shadow-indigo-500/20">
+                <span className="text-white font-extrabold text-sm tracking-wider">
+                  JS
+                </span>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">
+                  Studio Portal
+                </p>
+                <h2 className="text-sm font-extrabold text-slate-900 leading-none">
+                  {user?.name || "Admin"}
+                </h2>
+              </div>
             </div>
-            <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">
-                Studio Portal
-              </p>
-              <h2 className="text-sm font-extrabold text-slate-900 leading-none">
-                {user?.name || "Admin"}
-              </h2>
-            </div>
-          </div>
+          </Link>
 
-          {/* Right — Bell + Hamburger */}
+          {/* Bell + Hamburger — dono saath */}
           <div className="flex items-center gap-2">
             <NotificationBell />
             <button
@@ -169,17 +184,27 @@ export default function Sidebar() {
 
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex flex-col w-72 bg-transparent border-r border-slate-200/60 fixed inset-y-0 left-0 z-30 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
-        <SidebarContent />
+        <SidebarContent
+          pathname={pathname}
+          user={user}
+          logout={logout}
+          onClose={() => setMobileOpen(false)}
+        />
       </aside>
 
-      {/* Mobile sidebar (right side) */}
+      {/* Mobile sidebar */}
       <aside
         className={cn(
           "lg:hidden flex flex-col w-[85%] max-w-sm bg-white fixed inset-y-0 right-0 z-50 transform transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] shadow-[-10px_0_40px_rgba(0,0,0,0.08)]",
           mobileOpen ? "translate-x-0" : "translate-x-full",
         )}
       >
-        <SidebarContent />
+        <SidebarContent
+          pathname={pathname}
+          user={user}
+          logout={logout}
+          onClose={() => setMobileOpen(false)}
+        />
       </aside>
     </>
   );
