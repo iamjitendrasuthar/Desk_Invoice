@@ -23,12 +23,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Desktop header — lg+ pe hi render hoga, mobile pe hidden */}
-      <header className="hidden lg:flex fixed top-0 right-0 left-72 h-[66px] bg-white/80 backdrop-blur-md border-b border-slate-100 z-30 items-center justify-end px-6">
-        <NotificationBell />
-      </header>
+    
+      <div className="hidden lg:block">
+        <header className="fixed top-0 right-0 left-72 h-[66px] bg-white/80 backdrop-blur-md border-b border-slate-100 z-30 flex items-center justify-end px-6">
+          <NotificationBell />
+        </header>
+      </div>
 
-      {/* Mobile bell Sidebar ke top bar mein hai — hamburger ke paas */}
       <Sidebar />
 
       <main className="lg:pl-72 pt-[25px]">

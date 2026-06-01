@@ -15,6 +15,8 @@ import {
   Mail,
   MapPin,
   Briefcase,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 interface Customer {
@@ -38,6 +40,8 @@ const initForm = {
   address: { street: "", city: "", state: "", pincode: "" },
   notes: "",
 };
+
+const LIMIT = 15;
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -78,10 +82,12 @@ export default function CustomersPage() {
   const [form, setForm] = useState<any>(initForm);
   const [saving, setSaving] = useState(false);
 
+  const totalPages = Math.max(1, Math.ceil(total / LIMIT));
+
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
     try {
-      const params: any = { page, limit: 15 };
+      const params: any = { page, limit: LIMIT };
       if (search) params.search = search;
       const r = await api.get("/customers", { params });
       const customerList = Array.isArray(r?.data?.customers)
@@ -113,6 +119,7 @@ export default function CustomersPage() {
     setForm(initForm);
     setShowModal(true);
   };
+
   const openEdit = (c: Customer) => {
     setEditCustomer(c);
     setForm({
@@ -147,9 +154,29 @@ export default function CustomersPage() {
     regular: "bg-emerald-50 text-emerald-600 border border-emerald-100",
   };
 
+  // Page numbers to show (max 5 around current)
+  const getPageNumbers = () => {
+    const pages: (number | "...")[] = [];
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (page > 3) pages.push("...");
+      for (
+        let i = Math.max(2, page - 1);
+        i <= Math.min(totalPages - 1, page + 1);
+        i++
+      ) {
+        pages.push(i);
+      }
+      if (page < totalPages - 2) pages.push("...");
+      pages.push(totalPages);
+    }
+    return pages;
+  };
+
   return (
     <AppLayout>
-      {/* ✅ blur orbs hataye — mobile pe heavy the */}
       <div className="relative min-h-screen bg-[#f8fafc] text-slate-900 font-sans">
         <motion.div
           className="relative z-10 max-w-7xl mx-auto space-y-6 p-4 sm:p-6 lg:p-8"
@@ -181,7 +208,7 @@ export default function CustomersPage() {
             </button>
           </motion.div>
 
-          {/* Search Bar — ✅ backdrop-blur hataya */}
+          {/* Search */}
           <motion.div variants={itemVariants} className="relative max-w-md">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
@@ -195,7 +222,7 @@ export default function CustomersPage() {
             />
           </motion.div>
 
-          {/* Table — ✅ backdrop-blur-2xl hataya */}
+          {/* Table */}
           <motion.div
             variants={itemVariants}
             className="bg-white border border-slate-100 rounded-3xl p-2 md:p-6 shadow-sm"
@@ -330,6 +357,62 @@ export default function CustomersPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-5 pt-5 border-t border-slate-100 flex-wrap gap-3">
+                <p className="text-xs font-bold text-slate-400">
+                  Page <span className="text-slate-700">{page}</span> of{" "}
+                  <span className="text-slate-700">{totalPages}</span>{" "}
+                  &nbsp;·&nbsp; <span className="text-slate-700">{total}</span>{" "}
+                  total
+                </p>
+
+                <div className="flex items-center gap-1">
+                  {/* Prev */}
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="p-2 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-indigo-600 hover:border-indigo-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+
+                  {/* Page numbers */}
+                  {getPageNumbers().map((p, i) =>
+                    p === "..." ? (
+                      <span
+                        key={`ellipsis-${i}`}
+                        className="px-2 text-slate-400 text-sm font-bold select-none"
+                      >
+                        …
+                      </span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => setPage(p as number)}
+                        className={`w-9 h-9 rounded-xl text-sm font-extrabold transition-all ${
+                          page === p
+                            ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/30"
+                            : "border border-slate-200 bg-white text-slate-600 hover:text-indigo-600 hover:border-indigo-200"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    ),
+                  )}
+
+                  {/* Next */}
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="p-2 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-indigo-600 hover:border-indigo-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
           </motion.div>
         </motion.div>
       </div>
@@ -338,7 +421,6 @@ export default function CustomersPage() {
       <AnimatePresence>
         {showModal && (
           <>
-            {/* ✅ backdrop-blur hataya overlay se */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -354,7 +436,7 @@ export default function CustomersPage() {
                 exit="exit"
                 className="bg-white rounded-3xl border border-slate-100 shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pointer-events-auto flex flex-col"
               >
-                {/* Modal Header — ✅ backdrop-blur hataya */}
+                {/* Header */}
                 <div className="flex items-center justify-between p-6 md:p-8 border-b border-slate-100 bg-slate-50 sticky top-0 z-10">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100">
@@ -379,7 +461,7 @@ export default function CustomersPage() {
                   </button>
                 </div>
 
-                {/* Modal Body */}
+                {/* Body */}
                 <div className="p-6 md:p-8 space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div className="md:col-span-2">
@@ -535,7 +617,7 @@ export default function CustomersPage() {
                   </div>
                 </div>
 
-                {/* Modal Footer */}
+                {/* Footer */}
                 <div className="flex gap-4 p-6 md:p-8 border-t border-slate-100 bg-slate-50 mt-auto rounded-b-3xl">
                   <button
                     onClick={() => setShowModal(false)}

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import api from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
@@ -116,6 +116,14 @@ export default function SalesPage() {
       count: p.count,
     })) || [];
 
+  // Refs for the date inputs
+  const startDateRef = useRef<HTMLInputElement>(null);
+  const endDateRef = useRef<HTMLInputElement>(null);
+
+  const openPicker = (ref: React.RefObject<HTMLInputElement>) => {
+    ref.current?.showPicker();
+  };
+
   return (
     <AppLayout>
       {/* Light Background with Soft Pastel Orbs */}
@@ -146,54 +154,66 @@ export default function SalesPage() {
             </div>
           </motion.div>
 
-          {/* Filters Bar - Fully Responsive */}
+          {/* Filters Bar */}
           <motion.div
             variants={itemVariants}
-            className="bg-white/70 backdrop-blur-2xl border border-white rounded-3xl p-4 md:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]"
+            className="bg-white/70 backdrop-blur-2xl border border-white rounded-3xl p-4 md:p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)]"
           >
-            {/* Desktop: Row | Mobile: Column */}
-            <div className="flex flex-col md:flex-row md:items-center gap-4">
-              {/* Header inside Filters */}
-              <div className="flex items-center gap-2 pb-2 md:pb-0 md:pr-4 md:border-r border-slate-200">
-                <Filter className="w-5 h-5 text-indigo-500" />
-                <span className="font-extrabold text-sm text-slate-700 uppercase tracking-wider">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              {/* Label */}
+              <div className="flex items-center gap-2 shrink-0 sm:pr-4 sm:border-r border-slate-200">
+                <Filter className="w-4 h-4 text-indigo-500" />
+                <span className="font-extrabold text-xs text-slate-500 uppercase tracking-widest">
                   Filters
                 </span>
               </div>
 
-              {/* Date Inputs & Select Container */}
-              <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-[1fr,auto,1fr,auto] items-center gap-3">
+              {/* Controls */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1">
                 {/* Start Date */}
-                <div className="relative flex items-center">
-                  <Calendar className="absolute left-3 w-4 h-4 text-slate-400 z-10" />
+                <div
+                  className="flex-1 min-w-0 relative cursor-pointer"
+                  // @ts-ignore
+                  onClick={() => openPicker(startDateRef)}
+                >
                   <input
+                    ref={startDateRef}
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white/50 text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all cursor-pointer"
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white/60 text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all cursor-pointer"
                   />
                 </div>
 
-                <span className="text-slate-400 font-bold text-sm text-center">
+                <span className="hidden sm:block text-slate-400 font-bold text-sm shrink-0">
+                  →
+                </span>
+                <span className="block sm:hidden text-slate-400 font-bold text-xs text-center">
                   to
                 </span>
 
-                {/* End Date */}
-                <div className="relative flex items-center">
-                  <Calendar className="absolute left-3 w-4 h-4 text-slate-400 z-10" />
+                <div
+                  className="flex-1 min-w-0 relative cursor-pointer"
+                  // @ts-ignore
+                  onClick={() => openPicker(endDateRef)}
+                >
                   <input
+                    ref={endDateRef}
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white/50 text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all cursor-pointer"
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white/60 text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all cursor-pointer"
                   />
                 </div>
 
-                {/* Group By Select */}
+                {/* Divider */}
+                <div className="hidden sm:block w-px h-5 bg-slate-200 shrink-0" />
+
+                {/* Group By */}
                 <select
                   value={groupBy}
                   onChange={(e) => setGroupBy(e.target.value)}
-                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-slate-200 bg-white/50 text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all appearance-none cursor-pointer"
+                  className="sm:w-36 shrink-0 px-3 py-2.5 rounded-xl border border-slate-200 bg-white/60 text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all cursor-pointer appearance-none"
                 >
                   <option value="day">Daily View</option>
                   <option value="month">Monthly View</option>
