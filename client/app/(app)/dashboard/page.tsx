@@ -401,28 +401,31 @@ export default function DashboardPage() {
           </div>
 
           {/* Core Analytical Panels Grid */}
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
             {/* Sales Volume Stream Chart */}
             <motion.div
               variants={cardVariants}
-              className="xl:col-span-7 bg-white rounded-lg p-4 sm:p-6 border border-slate-200/60 shadow-sm"
+              className="xl:col-span-7 bg-white rounded-2xl p-5 sm:p-7 border border-slate-200/50 shadow-[0_2px_20px_-4px_rgba(0,0,0,0.04)]"
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                 <div>
-                  <h3 className="font-bold text-base text-[#1e293b] tracking-tight">
-                    Sales Analytics Chart
+                  <h3 className="font-bold text-lg text-slate-800 tracking-tight">
+                    Sales Analytics
                   </h3>
-                  <p className="text-xs font-medium text-slate-400 mt-0.5">
-                    Comparing revenue volume metrics against cleared store
-                    orders tracking indexes.
+                  <p className="text-sm font-medium text-slate-500 mt-1">
+                    Comparing revenue volume vs. cleared store orders
                   </p>
                 </div>
-                <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-md border border-slate-200/60 self-start sm:self-auto">
+                <div className="flex items-center gap-1 bg-slate-50/80 p-1.5 rounded-lg border border-slate-200/50 self-start sm:self-auto">
                   {(["3M", "6M", "1Y"] as const).map((range) => (
                     <button
                       key={range}
                       onClick={() => setActiveRange(range)}
-                      className={`px-3 py-1 text-sm font-bold border rounded-md transition-all ${activeRange === range ? "bg-[#007676] text-white border-[#007676]" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                      className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all duration-200 ${
+                        activeRange === range
+                          ? "bg-[#007676] text-white shadow-md shadow-teal-900/10"
+                          : "bg-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+                      }`}
                     >
                       {range}
                     </button>
@@ -430,12 +433,12 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="h-[240px] sm:h-[280px] w-full text-xs">
+              <div className="h-[260px] sm:h-[300px] w-full text-xs">
                 {chartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart
                       data={chartData}
-                      margin={{ top: 10, right: 5, left: -22, bottom: 0 }}
+                      margin={{ top: 10, right: 0, left: -20, bottom: 0 }}
                     >
                       <defs>
                         <linearGradient
@@ -446,12 +449,12 @@ export default function DashboardPage() {
                           y2="1"
                         >
                           <stop
-                            offset="0%"
+                            offset="5%"
                             stopColor="#007676"
-                            stopOpacity={0.1}
+                            stopOpacity={0.25}
                           />
                           <stop
-                            offset="100%"
+                            offset="95%"
                             stopColor="#007676"
                             stopOpacity={0}
                           />
@@ -464,88 +467,114 @@ export default function DashboardPage() {
                           y2="1"
                         >
                           <stop
-                            offset="0%"
+                            offset="5%"
                             stopColor="#4f46e5"
-                            stopOpacity={0.12}
+                            stopOpacity={0.25}
                           />
                           <stop
-                            offset="100%"
+                            offset="95%"
                             stopColor="#4f46e5"
                             stopOpacity={0}
                           />
                         </linearGradient>
                       </defs>
                       <CartesianGrid
-                        strokeDasharray="3 3"
-                        stroke="#f1f5f9"
+                        strokeDasharray="4 4"
+                        stroke="#e2e8f0"
                         vertical={false}
+                        opacity={0.6}
                       />
                       <XAxis
                         dataKey="name"
                         tick={{
-                          fontSize: 10,
-                          fill: "#94a3b8",
+                          fontSize: 11,
+                          fill: "#64748b",
                           fontWeight: 500,
                         }}
                         axisLine={false}
                         tickLine={false}
-                        dy={8}
+                        dy={12}
                       />
                       <YAxis
                         yAxisId="rev"
-                        tick={{ fontSize: 10, fill: "#94a3b8" }}
+                        tick={{
+                          fontSize: 11,
+                          fill: "#64748b",
+                          fontWeight: 500,
+                        }}
                         axisLine={false}
                         tickLine={false}
                         tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
+                        dx={-8}
                       />
                       <YAxis
                         yAxisId="ord"
                         orientation="right"
-                        tick={{ fontSize: 10, fill: "#94a3b8" }}
+                        tick={{
+                          fontSize: 11,
+                          fill: "#64748b",
+                          fontWeight: 500,
+                        }}
                         axisLine={false}
                         tickLine={false}
+                        dx={8}
                       />
                       <Tooltip
                         content={<ChartTooltip />}
-                        cursor={{ stroke: "#e2e8f0", strokeWidth: 1 }}
+                        cursor={{
+                          stroke: "#cbd5e1",
+                          strokeWidth: 1.5,
+                          strokeDasharray: "4 4",
+                        }}
                       />
                       <Area
                         yAxisId="rev"
-                        type="monotone"
+                        type="natural"
                         dataKey="revenue"
                         stroke="#007676"
-                        strokeWidth={2.5}
+                        strokeWidth={3}
                         fill="url(#gBrandRevenue)"
-                        activeDot={{ r: 5, stroke: "#fff", strokeWidth: 2 }}
+                        activeDot={{
+                          r: 6,
+                          fill: "#007676",
+                          stroke: "#fff",
+                          strokeWidth: 3,
+                        }}
                       />
                       <Area
                         yAxisId="ord"
-                        type="monotone"
+                        type="natural"
                         dataKey="orders"
                         stroke="#4f46e5"
-                        strokeWidth={2}
+                        strokeWidth={3}
                         fill="url(#gBrandOrders)"
-                        activeDot={{ r: 4, stroke: "#fff", strokeWidth: 2 }}
+                        activeDot={{
+                          r: 6,
+                          fill: "#4f46e5",
+                          stroke: "#fff",
+                          strokeWidth: 3,
+                        }}
                       />
                     </AreaChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-slate-300">
-                    <Activity className="w-6 h-6 mb-2 animate-pulse" />
-                    <p className="text-xs font-semibold">
+                  <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                    <Activity className="w-8 h-8 mb-3 animate-pulse text-slate-300" />
+                    <p className="text-sm font-medium">
                       No operational records identified
                     </p>
                   </div>
                 )}
               </div>
 
-              <div className="grid grid-cols-3 gap-3 sm:gap-4 mt-6 pt-5 border-t border-slate-100">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8 pt-6 border-t border-slate-100">
                 {[
                   {
                     label: "Total Sales",
                     val: formatCurrency(data?.summary?.monthlySales || 56265),
                     d: "+40.15%",
                     up: true,
+                    bg: "bg-teal-50/50",
                   },
                   {
                     label: "Total Purchases",
@@ -554,6 +583,7 @@ export default function DashboardPage() {
                     ),
                     d: "-20.25%",
                     up: false,
+                    bg: "bg-slate-50/80",
                   },
                   {
                     label: "Total Returns",
@@ -562,20 +592,30 @@ export default function DashboardPage() {
                     ),
                     d: "+18.15%",
                     up: true,
+                    bg: "bg-indigo-50/50",
                   },
                 ].map((m) => (
-                  <div key={m.label} className="space-y-0.5">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block truncate">
+                  <div
+                    key={m.label}
+                    className={`${m.bg} p-4 rounded-xl border border-slate-100/80 flex flex-col justify-center`}
+                  >
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block truncate mb-1">
                       {m.label}
                     </span>
-                    <span className="text-sm sm:text-base font-bold text-[#0f172a] block tracking-tight truncate">
-                      {m.val}
-                    </span>
-                    <span
-                      className={`text-[11px] font-semibold block ${m.up ? "text-emerald-600" : "text-rose-600"}`}
-                    >
-                      {m.d}
-                    </span>
+                    <div className="flex items-end justify-between">
+                      <span className="text-lg font-bold text-slate-800 tracking-tight truncate">
+                        {m.val}
+                      </span>
+                      <span
+                        className={`text-xs font-bold px-1.5 py-0.5 rounded-md ${
+                          m.up
+                            ? "text-emerald-700 bg-emerald-100/50"
+                            : "text-rose-700 bg-rose-100/50"
+                        }`}
+                      >
+                        {m.d}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -584,53 +624,68 @@ export default function DashboardPage() {
             {/* Category Performance Framework */}
             <motion.div
               variants={cardVariants}
-              className="xl:col-span-5 bg-white rounded-lg p-5 sm:p-6 border border-slate-200/60 shadow-sm flex flex-col justify-between"
+              className="xl:col-span-5 bg-white rounded-2xl p-5 sm:p-7 border border-slate-200/50 shadow-[0_2px_20px_-4px_rgba(0,0,0,0.04)] flex flex-col justify-between"
             >
               <div>
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h3 className="font-bold text-base text-[#1e293b] tracking-tight">
+                    <h3 className="font-bold text-lg text-slate-800 tracking-tight">
                       Category Breakdown
                     </h3>
-                    <p className="text-xs font-medium text-slate-400 mt-0.5">
-                      Current active monthly stock allocation distributions
-                      records
+                    <p className="text-sm font-medium text-slate-500 mt-1">
+                      Current stock allocation records
                     </p>
                   </div>
-                  <button className="p-2.5 border border-slate-200 rounded-md text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors">
+                  <button className="p-2 border border-slate-200 rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-700 transition-all shadow-sm">
                     <Filter className="w-4 h-4" />
                   </button>
                 </div>
 
-                <div className="h-[140px] w-full my-4 text-xs">
+                <div className="h-[160px] w-full my-6 text-xs">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={catData}
                       margin={{ top: 0, right: 0, left: -25, bottom: 0 }}
-                      barSize={12}
+                      barSize={16}
                     >
                       <CartesianGrid
-                        strokeDasharray="3 3"
+                        strokeDasharray="4 4"
                         stroke="#f1f5f9"
                         vertical={false}
                       />
                       <XAxis
                         dataKey="name"
                         tick={{
-                          fontSize: 10,
-                          fill: "#94a3b8",
+                          fontSize: 11,
+                          fill: "#64748b",
                           fontWeight: 500,
                         }}
                         axisLine={false}
                         tickLine={false}
-                      />{" "}
+                        dy={10}
+                      />
                       <YAxis
-                        tick={{ fontSize: 10, fill: "#94a3b8" }}
+                        tick={{
+                          fontSize: 11,
+                          fill: "#64748b",
+                          fontWeight: 500,
+                        }}
                         axisLine={false}
                         tickLine={false}
                       />
-                      <Tooltip cursor={{ fill: "rgba(241,245,249,0.2)" }} />
-                      <Bar dataKey="value" radius={[3, 3, 0, 0]}>
+                      <Tooltip
+                        cursor={{ fill: "rgba(241,245,249,0.4)" }}
+                        contentStyle={{
+                          borderRadius: "8px",
+                          border: "none",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                        }}
+                      />
+                      <Bar
+                        dataKey="value"
+                        radius={[4, 4, 4, 4]}
+                        background={{ fill: "#f8fafc", radius: 4 }}
+                      >
                         {catData.map((_, i) => (
                           <Cell
                             key={i}
@@ -643,11 +698,11 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="space-y-2.5 pt-2">
+              <div className="space-y-4 mt-2">
                 {catData.map((c, i) => (
-                  <div key={c.name} className="space-y-1">
-                    <div className="flex items-center justify-between text-xs font-semibold">
-                      <span className="text-slate-500">{c.name}</span>
+                  <div key={c.name} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-sm font-medium">
+                      <span className="text-slate-600">{c.name}</span>
                       <span
                         className="font-bold"
                         style={{ color: BAR_COLORS[i] }}
@@ -655,13 +710,17 @@ export default function DashboardPage() {
                         {c.value}%
                       </span>
                     </div>
-                    <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-2 bg-slate-100/80 rounded-full overflow-hidden shadow-inner">
                       <motion.div
                         className="h-full rounded-full"
                         style={{ background: BAR_COLORS[i] }}
                         initial={{ width: 0 }}
                         animate={{ width: `${c.value}%` }}
-                        transition={{ duration: 0.6, delay: i * 0.03 }}
+                        transition={{
+                          duration: 0.8,
+                          delay: i * 0.05,
+                          ease: "easeOut",
+                        }}
                       />
                     </div>
                   </div>
@@ -669,29 +728,28 @@ export default function DashboardPage() {
               </div>
             </motion.div>
           </div>
-
           {/* Lower Section Management Blocks */}
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-12 gap-5">
             {/* AI Smart Insights Panel */}
             <motion.div
               variants={cardVariants}
-              className="xl:col-span-3 bg-[#1e293b] border border-slate-800 rounded-lg p-5 text-white flex flex-col justify-between space-y-5 shadow-sm"
+              className="xl:col-span-3 bg-white border border-slate-200/60 rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-[0_2px_20px_-4px_rgba(0,0,0,0.04)]"
             >
-              <div className="flex items-center gap-3 pb-3 border-b border-white/10">
-                <div className="w-8 h-8 rounded bg-white/10 flex items-center justify-center shadow-inner">
-                  <Zap className="w-4 h-4 text-amber-400 fill-current" />
+              <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
+                <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
+                  <Zap className="w-4 h-4 text-teal-600 fill-current" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-white tracking-tight">
+                  <h3 className="font-bold text-sm text-slate-800 tracking-tight">
                     Smart Insights
                   </h3>
-                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
                     Active Store Analysis
                   </p>
                 </div>
               </div>
 
-              <div className="space-y-2.5 flex-1">
+              <div className="space-y-3 flex-1">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">
                   Top Selling Products
                 </span>
@@ -700,22 +758,22 @@ export default function DashboardPage() {
                   .map((p: any, idx: number) => (
                     <div
                       key={idx}
-                      className="flex items-center justify-between bg-white/[0.02] border border-white/[0.05] rounded-md px-3 py-2"
+                      className="flex items-center justify-between bg-slate-50 border border-slate-100 rounded-lg px-3 py-2.5 transition-colors hover:border-teal-100"
                     >
-                      <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex items-center gap-2.5 min-w-0">
                         <Star className="w-3.5 h-3.5 text-amber-400 fill-current shrink-0" />
-                        <span className="text-xs text-slate-200 font-medium truncate">
+                        <span className="text-xs text-slate-700 font-semibold truncate">
                           {p.name}
                         </span>
                       </div>
-                      <span className="text-[10px] font-bold text-slate-300 bg-white/10 px-2 py-0.5 rounded shrink-0">
+                      <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md shrink-0">
                         {p.totalSold} sold
                       </span>
                     </div>
                   ))}
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">
                   Peak Hours Matrix
                 </span>
@@ -725,9 +783,9 @@ export default function DashboardPage() {
                     .map((h: any, idx: number) => (
                       <div
                         key={idx}
-                        className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-md px-2.5 py-1.5 text-[11px] font-medium text-slate-300"
+                        className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-[11px] font-semibold text-slate-600"
                       >
-                        <Clock className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+                        <Clock className="w-3.5 h-3.5 text-teal-500 shrink-0" />
                         {h._id}:00 – {h._id + 1}:00
                       </div>
                     ))}
