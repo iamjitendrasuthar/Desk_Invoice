@@ -636,9 +636,6 @@ export default function DashboardPage() {
                       Current stock allocation records
                     </p>
                   </div>
-                  <button className="p-2 border border-slate-200 rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-700 transition-all shadow-sm">
-                    <Filter className="w-4 h-4" />
-                  </button>
                 </div>
 
                 <div className="h-[160px] w-full my-6 text-xs">
@@ -862,9 +859,6 @@ export default function DashboardPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button className="p-2 border border-slate-200 rounded-md text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors">
-                    <Download className="w-4 h-4" />
-                  </button>
                   <Link href="/billing?tab=history">
                     <button className="flex items-center gap-0.5 text-xs font-bold text-slate-700 hover:text-[#007676] transition-colors">
                       View all <ChevronRight className="w-3.5 h-3.5" />
