@@ -10,121 +10,153 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  Menu,
   X,
   Truck,
   ChevronRight,
   Layers,
+  Grid,
 } from "lucide-react";
-import { useState } from "react";
-import { useAuthStore } from "@/store/authStore";
-import NotificationBell from "@/components/notifications/NotificationBell";
 
-const navItems = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/products", icon: Package, label: "Products" },
-  { href: "/customers", icon: Users, label: "Customers" },
-  { href: "/billing", icon: FileText, label: "Billing" },
-  { href: "/sales", icon: BarChart3, label: "Sales" },
-  { href: "/suppliers", icon: Truck, label: "Suppliers" },
-  { href: "/settings", icon: Settings, label: "Settings" },
+const navigationGroups = [
+  {
+    title: "GENERAL",
+    items: [
+      { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+      { href: "/products", icon: Package, label: "Products" },
+      { href: "/customers", icon: Users, label: "Customers" },
+    ],
+  },
+  {
+    title: "APPLICATIONS",
+    items: [
+      { href: "/billing", icon: FileText, label: "Billing" },
+      { href: "/sales", icon: BarChart3, label: "Sales" },
+      { href: "/suppliers", icon: Truck, label: "Suppliers" },
+      { href: "/settings", icon: Settings, label: "Settings" },
+    ],
+  },
 ];
 
-interface SidebarContentProps {
-  pathname: string;
-  user: { name?: string; role?: string } | null;
-  logout: () => void;
-  onClose: () => void;
+interface SidebarProps {
+  mobileOpen: boolean;
+  setMobileOpen: (open: boolean) => void;
+  user?: { name?: string; role?: string } | null;
+  logout?: () => void;
 }
 
+// ─── INTERNAL WRAPPER FOR CONTENT REUSE ───
 function SidebarContent({
   pathname,
+  onClose,
   user,
   logout,
-  onClose,
-}: SidebarContentProps) {
+}: {
+  pathname: string;
+  onClose: () => void;
+  user: any;
+  logout: any;
+}) {
   return (
-    <div className="flex flex-col h-full bg-white/90 backdrop-blur-3xl pb-8">
-      {/* Logo + Mobile Close */}
-      <div className="flex items-center justify-between px-6 py-8">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-500/20">
-            <Layers className="w-5 h-5 text-white" />
+    <div className="flex flex-col h-full w-[300px] bg-[#006666] text-white lg:rounded-tr-[25px] lg:rounded-br-[25px] pb-6 relative overflow-hidden font-sans antialiased select-none">
+      {/* HEADER SECTION */}
+      <div className="flex items-center justify-between pl-7 pr-6 pt-8 pb-6 border-b border-white/[0.06] mx-2">
+        <Link
+          href="/"
+          className="flex items-center gap-3 group"
+          onClick={onClose}
+        >
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-400 to-amber-500 flex items-center justify-center flex-shrink-0 shadow-sm rotate-6">
+            <Layers className="w-5 h-5 text-[#006666] stroke-[2.5] -rotate-6" />
           </div>
           <div>
-            <span className="block font-extrabold text-xl tracking-tight text-slate-900 leading-none">
-              Desk Invoice
-            </span>
-            <span className="block text-[10px] font-bold uppercase tracking-widest text-indigo-500 mt-1">
-              Admin Dashboard
+            <span className="block font-bold text-[24px] tracking-wide text-white leading-none">
+              Desk<span className="text-amber-400 font-medium">Invoice</span>
             </span>
           </div>
+        </Link>
+
+        {/* Desktop Grid Button */}
+        <div className="hidden lg:flex items-center justify-center text-white/70 hover:text-white transition-colors cursor-pointer p-1.5 hover:bg-white/5 rounded-lg">
+          <Grid className="w-[18px] h-[18px] stroke-[2.2]" />
         </div>
 
+        {/* Mobile Close Button (image_e679da.png ke cross mark ko handle karne ke liye) */}
         <button
           onClick={onClose}
-          className="lg:hidden p-2.5 -mr-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-2xl transition-all"
+          className="lg:hidden p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all"
         >
-          <X className="w-5 h-5" />
+          <X className="w-6 h-6 stroke-[2.5]" />
         </button>
       </div>
 
-      {/* Nav Links */}
-      <nav className="flex-1 px-4 py-2 space-y-1.5 overflow-y-auto custom-scrollbar">
-        {navItems.map(({ href, icon: Icon, label }) => {
-          const active = pathname.startsWith(href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              onClick={onClose}
-              className={cn(
-                "flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm transition-all duration-300 group relative",
-                active
-                  ? "bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 font-bold shadow-[0_4px_15px_rgba(99,102,241,0.05)] border border-indigo-100/50"
-                  : "text-slate-500 font-medium hover:text-slate-900 hover:bg-slate-50 hover:scale-[1.02]",
-              )}
-            >
-              {active && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-indigo-500 rounded-r-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
-              )}
-              <Icon
-                className={cn(
-                  "w-5 h-5 flex-shrink-0 transition-colors",
-                  active
-                    ? "text-indigo-600"
-                    : "text-slate-400 group-hover:text-indigo-500",
-                )}
-              />
-              <span className="flex-1">{label}</span>
-              {active && <ChevronRight className="w-4 h-4 text-indigo-400" />}
-            </Link>
-          );
-        })}
-      </nav>
+      {/* NAVIGATION INDICATORS */}
+      <div className="flex-1 px-5 py-7 space-y-7 overflow-y-auto custom-scrollbar">
+        {navigationGroups.map((group) => (
+          <div key={group.title} className="space-y-3.5">
+            <h3 className="px-3.5 text-[12px] font-bold tracking-[0.15em] text-white/50 uppercase">
+              {group.title}
+            </h3>
 
-      {/* User Profile & Logout */}
-      <div className="p-4 mt-auto">
-        <div className="bg-slate-50/80 border border-slate-100/80 rounded-3xl p-4 shadow-sm backdrop-blur-xl">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-indigo-600 font-extrabold text-sm shadow-sm flex-shrink-0">
+            <nav className="space-y-1.5">
+              {group.items.map(({ href, icon: Icon, label }) => {
+                const active = pathname.startsWith(href);
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={onClose}
+                    className={cn(
+                      "flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-150 group relative text-[15px]",
+                      active
+                        ? "bg-[#1f7a7a] text-white font-medium shadow-[0_4px_12px_rgba(0,0,0,0.05)]"
+                        : "text-white/80 font-normal hover:text-white hover:bg-white/[0.04]",
+                    )}
+                  >
+                    <Icon
+                      className={cn(
+                        "w-[18px] h-[18px] shrink-0 transition-colors stroke-[2.2]",
+                        active
+                          ? "text-white"
+                          : "text-white/60 group-hover:text-white",
+                      )}
+                    />
+                    <span className="flex-1 tracking-wide font-medium text-[14.5px]">
+                      {label}
+                    </span>
+                    {active ? (
+                      <ChevronRight className="w-4 h-4 text-white/70 rotate-90 transition-transform stroke-[2.5]" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-white/40 group-hover:text-white/80 transition-all stroke-[2.5]" />
+                    )}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+        ))}
+      </div>
+
+      {/* CAPSULE PROFILE */}
+      <div className="px-5 mt-auto">
+        <div className="bg-[#004d4e]/60 border border-white/5 rounded-2xl p-4 shadow-lg backdrop-blur-md">
+          <div className="flex items-center gap-3.5 mb-3.5">
+            <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center text-amber-400 font-bold text-base shrink-0">
               {user?.name?.[0]?.toUpperCase() || "J"}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-extrabold text-slate-900 truncate">
+              <p className="text-sm font-bold text-white truncate">
                 {user?.name || "Admin User"}
               </p>
-              <p className="text-xs font-bold text-slate-400 capitalize mt-0.5">
+              <p className="text-[11px] font-medium text-white/40 capitalize mt-0.5">
                 {user?.role || "Management"}
               </p>
             </div>
           </div>
-
           <button
             onClick={logout}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-rose-600 bg-white border border-rose-100 shadow-sm hover:bg-rose-50 hover:border-rose-200 transition-all duration-300 active:scale-[0.98]"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold text-white/80 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white transition-all duration-150 active:scale-[0.98]"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-[14px] h-[14px]" />
             Sign Out
           </button>
         </div>
@@ -133,77 +165,46 @@ function SidebarContent({
   );
 }
 
-export default function Sidebar() {
+// ─── MAIN EXPORT SIDEBAR ENTRY ───
+export default function Sidebar({
+  mobileOpen,
+  setMobileOpen,
+  user,
+  logout,
+}: SidebarProps) {
   const pathname = usePathname();
-  const { user, logout } = useAuthStore();
-  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <>
-      {/* Mobile Top Bar — ✅ NotificationBell NAHI hai yahan */}
-      {!mobileOpen && (
-        <div className="lg:hidden fixed top-0 inset-x-0 w-full z-50 bg-white/85 backdrop-blur-2xl border-b border-slate-200/60 px-4 sm:px-6 py-3.5 flex items-center justify-between shadow-[0_4px_20px_rgb(0,0,0,0.04)]">
-          <Link href={"/"}>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-md shadow-indigo-500/20">
-                <span className="text-white font-extrabold text-sm tracking-wider">
-                  JS
-                </span>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">
-                  Studio Portal
-                </p>
-                <h2 className="text-sm font-extrabold text-slate-900 leading-none">
-                  {user?.name || "Admin"}
-                </h2>
-              </div>
-            </div>
-          </Link>
-
-          {/* Bell + Hamburger — dono saath */}
-          <div className="flex items-center gap-2">
-            <NotificationBell />
-            <button
-              onClick={() => setMobileOpen(true)}
-              className="p-2.5 bg-slate-50 text-slate-700 rounded-xl border border-slate-200/60 shadow-sm hover:bg-white hover:text-indigo-600 transition-all active:scale-95"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="lg:hidden fixed inset-0 z-40 bg-slate-900/10 backdrop-blur-sm transition-opacity duration-300"
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs lg:hidden transition-opacity duration-300"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
-      {/* Desktop sidebar */}
-      <aside className="hidden lg:flex flex-col w-72 bg-transparent border-r border-slate-200/60 fixed inset-y-0 left-0 z-30 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+      {/* ─── DESKTOP LEFT SIDEBAR ─── */}
+      <aside className="hidden lg:flex flex-col w-[300px] fixed inset-y-0 left-0 z-30 bg-transparent">
         <SidebarContent
           pathname={pathname}
+          onClose={() => setMobileOpen(false)}
           user={user}
           logout={logout}
-          onClose={() => setMobileOpen(false)}
         />
       </aside>
 
-      {/* Mobile sidebar */}
+      {/* ─── MOBILE DRAWER PANEL SLIDE-IN (Left view setup) ─── */}
       <aside
         className={cn(
-          "lg:hidden flex flex-col w-[85%] max-w-sm bg-white fixed inset-y-0 right-0 z-50 transform transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] shadow-[-10px_0_40px_rgba(0,0,0,0.08)]",
-          mobileOpen ? "translate-x-0" : "translate-x-full",
+          "lg:hidden flex flex-col fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-out shadow-2xl h-full",
+          mobileOpen ? "translate-x-0" : "-translate-x-full", // Left drawer movement fix
         )}
       >
         <SidebarContent
           pathname={pathname}
+          onClose={() => setMobileOpen(false)}
           user={user}
           logout={logout}
-          onClose={() => setMobileOpen(false)}
         />
       </aside>
     </>

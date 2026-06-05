@@ -1,14 +1,15 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
+import Navbar from "@/components/layout/Navbar";
 import { useAuthStore } from "@/store/authStore";
-import NotificationBell from "@/components/notifications/NotificationBell";
 import NotificationToast from "../notifications/NotificationToast";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { token, loadUser } = useAuthStore();
   const router = useRouter();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -22,18 +23,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [token, router]);
 
   return (
-    <div className="min-h-screen bg-background mt-10">
-      <div className="hidden lg:block">
-        <header className="fixed top-0 right-0 left-72 h-[66px] bg-white/80 backdrop-blur-md border-b border-slate-100 z-30 flex items-center justify-end px-6">
-          <NotificationBell />
-        </header>
+    <div className="min-h-screen bg-[#F5F5F5] flex relative overflow-hidden">
+      <Sidebar mobileOpen={sidebarOpen} setMobileOpen={setSidebarOpen} />
+
+      <div className="flex-1 flex flex-col w-full lg:pl-[300px] transition-all duration-300 ease-in-out overflow-y-auto h-screen">
+        <Navbar onMenuToggle={() => setSidebarOpen(true)} />
+
+        <main className="flex-1 w-full max-w-full box-border">
+          {children}
+        </main>
       </div>
 
-      <Sidebar />
-
-      <main className="lg:pl-72 pt-[25px]">
-        <div className="min-h-screen p-4">{children}</div>
-      </main>
+      {/* Global Alerts Portal */}
       <NotificationToast />
     </div>
   );

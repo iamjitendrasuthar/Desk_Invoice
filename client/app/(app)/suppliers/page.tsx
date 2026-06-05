@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import api from "@/lib/api";
 import { motion, AnimatePresence, Variants } from "framer-motion";
@@ -16,6 +16,8 @@ import {
   MapPin,
   Search,
   Filter,
+  AlertCircle,
+  ChevronRight,
 } from "lucide-react";
 
 interface Supplier {
@@ -44,32 +46,39 @@ const initForm = {
   address: { city: "", state: "" },
 };
 
+const springTransition = { type: "spring", stiffness: 240, damping: 26 };
+
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    transition: { staggerChildren: 0.05, delayChildren: 0.1 },
+    transition: { staggerChildren: 0.02, delayChildren: 0.01 },
   },
 };
 
 const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 15 },
-  show: {
+  hidden: { opacity: 0, y: 8 },
+  show: { opacity: 1, y: 0, transition: springTransition },
+};
+
+const drawerVariants: Variants = {
+  hidden: { x: "100%", opacity: 0.95 },
+  visible: {
+    x: 0,
     opacity: 1,
-    y: 0,
-    transition: { type: "spring", stiffness: 400, damping: 30 },
+    transition: { type: "spring", damping: 28, stiffness: 220 },
+  },
+  exit: {
+    x: "100%",
+    opacity: 0.95,
+    transition: { duration: 0.18, ease: "easeInOut" },
   },
 };
 
 const modalVariants: Variants = {
-  hidden: { opacity: 0, scale: 0.97, y: 10 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    transition: { type: "spring", damping: 30, stiffness: 400 },
-  },
-  exit: { opacity: 0, scale: 0.97, y: -10, transition: { duration: 0.15 } },
+  hidden: { opacity: 0, scale: 0.96, y: 8 },
+  visible: { opacity: 1, scale: 1, y: 0, transition: springTransition },
+  exit: { opacity: 0, scale: 0.96, y: -6, transition: { duration: 0.12 } },
 };
 
 export default function SuppliersPage() {
@@ -81,6 +90,18 @@ export default function SuppliersPage() {
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
 
+  const [errors, setErrors] = useState<{ name?: string }>({});
+  const [globalError, setGlobalError] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  useEffect(() => {
+    if (globalError) {
+      const timer = setTimeout(() => setGlobalError(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [globalError]);
+
   const fetchSuppliers = useCallback(async () => {
     setLoading(true);
     try {
@@ -88,9 +109,12 @@ export default function SuppliersPage() {
       const list =
         response.data?.suppliers || response.data?.data || response.data || [];
       setSuppliers(Array.isArray(list) ? list : []);
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      console.error(error);
       setSuppliers([]);
+      setGlobalError(
+        "Failed to fetch commercial suppliers dataset components.",
+      );
     } finally {
       setLoading(false);
     }
@@ -102,11 +126,13 @@ export default function SuppliersPage() {
 
   const openAdd = () => {
     setForm(initForm);
+    setErrors({});
     setEditSupplier(null);
     setShowModal(true);
   };
 
   const openEdit = (supplier: Supplier) => {
+    setErrors({});
     setForm({
       name: supplier.name || "",
       contactPerson: supplier.contactPerson || "",
@@ -126,7 +152,7 @@ export default function SuppliersPage() {
 
   const handleSave = async () => {
     if (!form.name.trim()) {
-      alert("Supplier name is required");
+      setErrors({ name: "Supplier baseline identity name title is required." });
       return;
     }
     setSaving(true);
@@ -139,203 +165,236 @@ export default function SuppliersPage() {
       setShowModal(false);
       fetchSuppliers();
     } catch (error: any) {
-      alert(error?.response?.data?.message || "Error saving supplier");
+      setGlobalError(
+        error?.response?.data?.message ||
+          "Operational supplier asset storage transaction failed.",
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this supplier?")) return;
+  const triggerDelete = (id: string) => {
+    setDeleteId(id);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteId) return;
     try {
-      await api.delete(`/suppliers/${id}`);
+      await api.delete(`/suppliers/${deleteId}`);
+      setShowDeleteModal(false);
+      setDeleteId(null);
       fetchSuppliers();
     } catch (error: any) {
-      alert(error?.response?.data?.message || "Error deleting supplier");
+      setGlobalError(
+        error?.response?.data?.message ||
+          "Operational pipeline execution failed to erase source metrics.",
+      );
     }
   };
 
   return (
     <AppLayout>
-      {/* blur orbs hataye — mobile GPU ke liye heavy the */}
-      <div className="relative min-h-screen bg-[#f8fafc] text-slate-900 font-sans">
+      <div className="min-h-screen bg-[#F5F5F5] text-[#334155] antialiased pb-16 font-sans relative">
+        {/* Universal Ribbon Message Status Toast Panel */}
+        <AnimatePresence>
+          {globalError && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="fixed top-4 sm:top-6 left-1/2 -translate-x-1/2 z-50 max-w-xl w-full px-4"
+            >
+              <div className="bg-rose-50 border border-rose-200 shadow-xl rounded-lg p-4 flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-rose-900 leading-tight">
+                    System Operational Alert
+                  </p>
+                  <p className="text-[11px] font-medium text-rose-600 mt-1">
+                    {globalError}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setGlobalError(null)}
+                  className="p-1 hover:bg-rose-100 rounded text-rose-400 hover:text-rose-700 transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <motion.div
-          className="relative z-10 max-w-7xl mx-auto space-y-8 p-4 sm:p-6 lg:p-8"
+          className="w-full mx-auto px-4 sm:px-8 py-6 space-y-5"
           variants={containerVariants}
           initial="hidden"
           animate="show"
         >
           {/* Header */}
-          <motion.div
-            variants={itemVariants}
-            className="flex flex-col sm:flex-row sm:items-end justify-between gap-6"
-          >
-            <div>
-              <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
-                Suppliers
-              </h1>
-              <p className="text-slate-500 text-sm font-medium mt-2">
-                Managing{" "}
-                <span className="font-bold text-slate-700">
-                  {suppliers.length} suppliers
-                </span>
-              </p>
-            </div>
-
-            <button
-              onClick={openAdd}
-              className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/30 hover:-translate-y-0.5 transition-all duration-200"
-            >
-              <Plus className="w-4 h-4 stroke-[3]" />
-              Add Supplier
-            </button>
-          </motion.div>
-
-          {/* Search — backdrop-blur hataya */}
-          <motion.div
-            variants={itemVariants}
-            className="flex flex-wrap items-center gap-4 bg-white border border-slate-100 rounded-3xl p-4 md:p-6 shadow-sm"
-          >
-            <div className="flex items-center gap-2 pr-4 md:border-r border-slate-200">
-              <Filter className="w-5 h-5 text-indigo-500" />
-              <span className="font-extrabold text-sm text-slate-700">
-                Filters
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <h1 className="text-2xl font-bold tracking-tight text-[#1e293b]">
+              Suppliers Directory
+            </h1>
+            <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
+              <span className="hover:text-slate-800 cursor-pointer">🏠</span>
+              <span>/</span>
+              <span className="hover:text-slate-800 cursor-pointer">
+                Logistics
+              </span>
+              <span>/</span>
+              <span className="text-slate-600 font-semibold">
+                Suppliers List
               </span>
             </div>
+          </div>
 
-            <div className="relative flex-1 min-w-[250px]">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search supplier..."
-                className="w-full pl-11 pr-4 py-2.5 rounded-2xl border border-slate-200 bg-white text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-400"
-              />
-            </div>
-          </motion.div>
+          {/* Main Workspace Frame Card Sheet Layout */}
+          <motion.div
+            variants={itemVariants}
+            className="bg-white border border-slate-200/60 rounded-lg shadow-sm p-4 sm:p-6 space-y-6"
+          >
+            {/* Action Bar / Controls Bar Row */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+              <div className="relative flex-1 w-full">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search logistical suppliers profiles..."
+                  className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-md bg-white text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-slate-400 transition-colors"
+                />
+              </div>
 
-          {/* Grid */}
-          {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="w-12 h-12 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin" />
+              <button
+                onClick={openAdd}
+                className="flex items-center justify-center gap-2 bg-[#007676] hover:bg-[#005f5f] text-white px-5 py-2 rounded-md text-sm font-bold tracking-wide transition-all shadow-xs w-full sm:w-auto shrink-0"
+              >
+                <Plus className="w-4 h-4 stroke-[3]" /> Add Supplier
+              </button>
             </div>
-          ) : (
-            <motion.div
-              variants={containerVariants}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-            >
-              {suppliers.length === 0 ? (
-                <div className="col-span-full text-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
-                  <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Truck className="w-10 h-10 text-slate-300" />
+
+            {/* Supplier Grid Framework Component */}
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="inline-flex items-center justify-center w-8 h-8 border-2 border-slate-200 border-t-[#007676] rounded-full animate-spin" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+                {suppliers.length === 0 ? (
+                  <div className="col-span-full text-center py-20 bg-slate-50 border border-slate-100 rounded-lg">
+                    <div className="w-12 h-12 bg-slate-100 border border-slate-200/60 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-2xs">
+                      <Truck className="w-5 h-5 text-slate-400" />
+                    </div>
+                    <p className="text-sm font-semibold text-slate-500">
+                      No active supplier records resolved
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Map down your first procurement source parameters node
+                      configuration card to initialize.
+                    </p>
                   </div>
-                  <h3 className="text-lg font-extrabold text-slate-900 mb-1">
-                    No Suppliers Found
-                  </h3>
-                  <p className="text-slate-500 font-medium text-sm">
-                    Add your first supplier to manage your business.
-                  </p>
-                </div>
-              ) : (
-                suppliers.map((supplier) => (
-                  <motion.div
-                    key={supplier._id}
-                    variants={itemVariants}
-                    /* backdrop-blur-2xl hataya — har card pe tha, GPU jam karta tha */
-                    className="group bg-white border border-slate-100 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden"
-                  >
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                ) : (
+                  suppliers.map((supplier) => (
+                    <div
+                      key={supplier._id}
+                      className="group bg-white border border-slate-200/60 rounded-lg p-5 shadow-sm hover:shadow-md hover:border-slate-300/80 transition-all duration-150 relative overflow-hidden flex flex-col justify-between min-h-[220px]"
+                    >
+                      <div>
+                        {/* Upper Card Header */}
+                        <div className="flex items-start justify-between mb-3.5">
+                          <div className="w-11 h-11 rounded-lg bg-[#eff6ff] flex items-center justify-center text-[#4f46e5] font-bold text-base shrink-0 shadow-xs">
+                            <Truck className="w-5 h-5 text-[#4f46e5]" />
+                          </div>
 
-                    {/* Top */}
-                    <div className="flex items-start justify-between mb-5">
-                      <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center border border-indigo-100/50 group-hover:scale-105 transition-transform">
-                        <Truck className="w-6 h-6 text-indigo-600" />
+                          <div className="flex items-center gap-3 opacity-40 group-hover:opacity-100 transition-opacity duration-150">
+                            <button
+                              onClick={() => openEdit(supplier)}
+                              className="text-slate-400 hover:text-slate-700 transition-colors p-1"
+                            >
+                              <Edit2 className="w-4 h-4 stroke-[1.8]" />
+                            </button>
+                            <button
+                              onClick={() => triggerDelete(supplier._id)}
+                              className="text-slate-400 hover:text-rose-600 transition-colors p-1"
+                            >
+                              <Trash2 className="w-4 h-4 stroke-[1.8]" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Metadata Content */}
+                        <div className="space-y-1">
+                          <h3 className="font-bold text-sm text-[#0f172a] tracking-wide truncate">
+                            {supplier.name}
+                          </h3>
+                          {supplier.contactPerson && (
+                            <p className="text-[11px] font-medium text-slate-400 truncate">
+                              Rep: {supplier.contactPerson}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Contacts and Location Metrics */}
+                        <div className="mt-4 pt-4 border-t border-slate-100 space-y-2 text-xs font-medium text-[#475569]">
+                          {supplier.phone && (
+                            <div className="flex items-center gap-2">
+                              <Phone className="w-4 h-4 text-slate-400 shrink-0 stroke-[1.8]" />
+                              <span>{supplier.phone}</span>
+                            </div>
+                          )}
+                          {supplier.email && (
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Mail className="w-4 h-4 text-slate-400 shrink-0 stroke-[1.8]" />
+                              <span className="truncate">{supplier.email}</span>
+                            </div>
+                          )}
+                          {(supplier.address?.city ||
+                            supplier.address?.state) && (
+                            <div className="flex items-center gap-2 min-w-0">
+                              <MapPin className="w-4 h-4 text-slate-400 shrink-0 stroke-[1.8]" />
+                              <span className="truncate">
+                                {supplier.address?.city}
+                                {supplier.address?.city &&
+                                supplier.address?.state
+                                  ? ", "
+                                  : ""}
+                                {supplier.address?.state}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => openEdit(supplier)}
-                          className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(supplier._id)}
-                          className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Name */}
-                    <h3 className="font-extrabold text-lg text-slate-900 truncate">
-                      {supplier.name}
-                    </h3>
-
-                    {/* Contact */}
-                    <div className="mt-5 space-y-2.5">
-                      {supplier.phone && (
-                        <div className="flex items-center gap-2.5 text-sm font-bold text-slate-600">
-                          <div className="w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
-                            <Phone className="w-3.5 h-3.5" />
+                      {/* Lower Badges Split Row */}
+                      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between shrink-0">
+                        {supplier.gstin ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[11px] font-mono text-slate-400 block">
+                              GSTIN: {supplier.gstin.toUpperCase()}
+                            </span>
                           </div>
-                          {supplier.phone}
-                        </div>
-                      )}
-                      {supplier.email && (
-                        <div className="flex items-center gap-2.5 text-sm font-bold text-slate-600">
-                          <div className="w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
-                            <Mail className="w-3.5 h-3.5" />
-                          </div>
-                          <span className="truncate">{supplier.email}</span>
-                        </div>
-                      )}
-                      {(supplier.address?.city || supplier.address?.state) && (
-                        <div className="flex items-center gap-2.5 text-sm font-bold text-slate-600">
-                          <div className="w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
-                            <MapPin className="w-3.5 h-3.5" />
-                          </div>
-                          <span>
-                            {supplier.address?.city}
-                            {supplier.address?.city && supplier.address?.state
-                              ? ", "
-                              : ""}
-                            {supplier.address?.state}
+                        ) : (
+                          <span className="text-[11px] font-medium text-slate-400 italic">
+                            No GST Registered
                           </span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Footer */}
-                    <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
-                      {supplier.gstin ? (
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
-                            GST
-                          </span>
-                          <span className="text-xs font-bold text-slate-700">
-                            {supplier.gstin}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-xs font-bold text-slate-400 italic">
-                          No GST
+                        )}
+                        <span className="inline-block text-[11px] font-bold uppercase tracking-wider text-[#334155] bg-[#f1f5f9] border border-slate-200 px-2.5 py-0.5 rounded-md">
+                          {supplier.paymentTerms || "STANDARD"}
                         </span>
-                      )}
-                      <span className="text-[10px] font-extrabold text-indigo-600 uppercase tracking-wider bg-indigo-50 px-2.5 py-1 rounded-md">
-                        {supplier.paymentTerms || "Standard"}
-                      </span>
+                      </div>
                     </div>
-                  </motion.div>
-                ))
-              )}
-            </motion.div>
-          )}
+                  ))
+                )}
+              </div>
+            )}
+          </motion.div>
         </motion.div>
       </div>
 
-      {/* Modal */}
+      {/* Slide-out Form Drawer Overlay */}
       <AnimatePresence>
         {showModal && (
           <>
@@ -343,74 +402,93 @@ export default function SuppliersPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-slate-900/40"
+              className="fixed inset-0 z-40 bg-slate-950/20 backdrop-blur-xs"
               onClick={() => setShowModal(false)}
             />
 
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
-              <motion.div
-                variants={modalVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                className="bg-white rounded-3xl border border-slate-100 shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pointer-events-auto flex flex-col"
-              >
-                {/* Header */}
-                <div className="flex items-center justify-between p-6 md:p-8 border-b border-slate-100 bg-slate-50 sticky top-0 z-10">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100">
-                      <Building2 className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h2 className="font-extrabold text-xl text-slate-900">
-                        {editSupplier ? "Edit Supplier" : "New Supplier"}
-                      </h2>
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">
-                        {editSupplier ? "Update Supplier" : "Add Supplier"}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="p-2 bg-white hover:bg-slate-100 text-slate-400 hover:text-slate-600 border border-slate-200 rounded-xl transition-all"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
+            <motion.div
+              variants={drawerVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="fixed top-0 right-0 bottom-0 z-50 w-full sm:max-w-md bg-white border-l border-slate-200 flex flex-col pointer-events-auto shadow-2xl text-slate-800"
+            >
+              <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/80 sticky top-0 z-10">
+                <div>
+                  <h2 className="font-bold text-sm text-slate-900 tracking-wide">
+                    {editSupplier
+                      ? "Edit Supplier Details"
+                      : "Add New Supplier"}
+                  </h2>
                 </div>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="p-1 hover:bg-slate-100 text-slate-400 hover:text-slate-900 border border-slate-200 rounded transition-all"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
 
-                {/* Body */}
-                <div className="p-6 md:p-8 space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                        Supplier Name *
-                      </label>
-                      <input
-                        value={form.name}
-                        onChange={(e) =>
-                          setForm((p) => ({ ...p, name: e.target.value }))
-                        }
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all"
-                        placeholder="Enter supplier name"
-                      />
-                    </div>
+              {/* Form Input Parameters Workspace Container */}
+              <div className="p-5 space-y-4 flex-1 overflow-y-auto bg-white">
+                <div className="space-y-3.5">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 mb-1">
+                      Supplier / Organization Title *
+                    </label>
+                    <input
+                      type="text"
+                      value={form.name}
+                      onChange={(e) => {
+                        setForm((p) => ({ ...p, name: e.target.value }));
+                        if (errors.name) setErrors({});
+                      }}
+                      className={`w-full px-3 py-2 rounded border ${errors.name ? "border-rose-400 bg-rose-50/10" : "border-slate-200 bg-slate-50/50"} text-xs font-medium text-slate-800 focus:bg-white focus:border-slate-400 focus:outline-none transition-all`}
+                      placeholder="e.g. Sterling Trading Hub"
+                    />
+                    {errors.name && (
+                      <p className="text-[11px] font-semibold text-rose-500 mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" /> {errors.name}
+                      </p>
+                    )}
+                  </div>
 
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 mb-1">
+                      Contact Representative Name
+                    </label>
+                    <input
+                      type="text"
+                      value={form.contactPerson}
+                      onChange={(e) =>
+                        setForm((p) => ({
+                          ...p,
+                          contactPerson: e.target.value,
+                        }))
+                      }
+                      className="w-full px-3 py-2 rounded border border-slate-200 bg-slate-50/50 text-xs font-medium text-slate-800 focus:bg-white focus:border-slate-400 focus:outline-none transition-all"
+                      placeholder="e.g. Johnathan Doe"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                        Phone
+                      <label className="block text-[11px] font-bold text-slate-500 mb-1">
+                        Phone Number
                       </label>
                       <input
+                        type="text"
                         value={form.phone}
                         onChange={(e) =>
                           setForm((p) => ({ ...p, phone: e.target.value }))
                         }
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                        className="w-full px-3 py-2 rounded border border-slate-200 bg-slate-50/50 text-xs font-medium text-slate-800 focus:bg-white focus:border-slate-400 focus:outline-none transition-all"
+                        placeholder="+91 98765 43210"
                       />
                     </div>
-
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                        Email
+                      <label className="block text-[11px] font-bold text-slate-500 mb-1">
+                        Email Address
                       </label>
                       <input
                         type="email"
@@ -418,26 +496,30 @@ export default function SuppliersPage() {
                         onChange={(e) =>
                           setForm((p) => ({ ...p, email: e.target.value }))
                         }
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                        className="w-full px-3 py-2 rounded border border-slate-200 bg-slate-50/50 text-xs font-medium text-slate-800 focus:bg-white focus:border-slate-400 focus:outline-none transition-all"
+                        placeholder="corporate@domain.com"
                       />
                     </div>
+                  </div>
 
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                        GST Number
+                      <label className="block text-[11px] font-bold text-slate-500 mb-1">
+                        GSTIN Code
                       </label>
                       <input
+                        type="text"
                         value={form.gstin}
                         onChange={(e) =>
                           setForm((p) => ({ ...p, gstin: e.target.value }))
                         }
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all uppercase"
+                        className="w-full px-3 py-2 rounded border border-slate-200 bg-slate-50/50 text-xs font-mono font-medium text-slate-800 focus:bg-white focus:border-slate-400 focus:outline-none uppercase transition-all"
+                        placeholder="Tax lookup system ID"
                       />
                     </div>
-
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                        Payment Terms
+                      <label className="block text-[11px] font-bold text-slate-500 mb-1">
+                        Payment Configuration
                       </label>
                       <select
                         value={form.paymentTerms}
@@ -447,7 +529,7 @@ export default function SuppliersPage() {
                             paymentTerms: e.target.value,
                           }))
                         }
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all appearance-none"
+                        className="w-full px-3 py-2 rounded border border-slate-200 bg-slate-50/50 text-xs font-medium text-slate-600 focus:bg-white focus:border-slate-400 focus:outline-none appearance-none cursor-pointer"
                       >
                         <option value="Immediate">Immediate</option>
                         <option value="Net 15">Net 15 Days</option>
@@ -456,12 +538,24 @@ export default function SuppliersPage() {
                         <option value="Net 60">Net 60 Days</option>
                       </select>
                     </div>
+                  </div>
+                </div>
 
+                <div className="h-px w-full bg-slate-100" />
+
+                {/* Regional Logistics Configuration Segment */}
+                <div className="space-y-3">
+                  <h3 className="flex items-center gap-1.5 text-xs font-bold text-slate-700 uppercase tracking-wide">
+                    <Building2 className="w-3.5 h-3.5 text-slate-400" />{" "}
+                    Regional Node Logistics
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                        City
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">
+                        City Location
                       </label>
                       <input
+                        type="text"
                         value={form.address.city}
                         onChange={(e) =>
                           setForm((p) => ({
@@ -469,15 +563,15 @@ export default function SuppliersPage() {
                             address: { ...p.address, city: e.target.value },
                           }))
                         }
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                        className="w-full px-2.5 py-1.5 rounded border border-slate-200 bg-slate-50/50 text-xs font-medium text-slate-800 focus:bg-white focus:border-slate-400 focus:outline-none"
                       />
                     </div>
-
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                        State
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">
+                        State Zone
                       </label>
                       <input
+                        type="text"
                         value={form.address.state}
                         onChange={(e) =>
                           setForm((p) => ({
@@ -485,30 +579,86 @@ export default function SuppliersPage() {
                             address: { ...p.address, state: e.target.value },
                           }))
                         }
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                        className="w-full px-2.5 py-1.5 rounded border border-slate-200 bg-slate-50/50 text-xs font-medium text-slate-800 focus:bg-white focus:border-slate-400 focus:outline-none"
                       />
                     </div>
                   </div>
                 </div>
+              </div>
 
-                {/* Footer */}
-                <div className="flex gap-4 p-6 md:p-8 border-t border-slate-100 bg-slate-50 mt-auto rounded-b-3xl">
+              {/* Drawer Control Actions Footer */}
+              <div className="flex gap-2 p-5 border-t border-slate-200 bg-slate-50/80 sticky bottom-0">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="flex-1 px-4 py-2 rounded border border-slate-200 bg-white text-xs font-semibold text-slate-500 hover:bg-slate-100 transition-all shadow-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="flex-1 px-4 py-2 rounded bg-[#007676] hover:bg-[#005f5f] text-white text-xs font-semibold transition-all shadow-xs"
+                >
+                  {saving
+                    ? "Saving..."
+                    : editSupplier
+                      ? "Save Changes"
+                      : "Create Supplier"}
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Confirmation Modal Pop-Up Section */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-slate-950/20 backdrop-blur-xs"
+              onClick={() => setShowDeleteModal(false)}
+            />
+
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+              <motion.div
+                variants={modalVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="bg-white rounded border border-slate-200 w-full max-w-sm pointer-events-auto shadow-2xl p-5 text-center space-y-4"
+              >
+                <div className="w-10 h-10 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-500 mx-auto">
+                  <AlertCircle className="w-5 h-5 stroke-[2.2]" />
+                </div>
+
+                <div className="space-y-1">
+                  <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+                    Delete Supplier Profile?
+                  </h3>
+                  <p className="text-xs font-medium text-slate-400 px-2 leading-relaxed">
+                    Are you sure you want to remove this source pipeline asset
+                    permanently from memory? This action cannot be undone.
+                  </p>
+                </div>
+
+                <div className="flex gap-2.5 pt-1">
                   <button
-                    onClick={() => setShowModal(false)}
-                    className="flex-1 px-6 py-3.5 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all"
+                    onClick={() => setShowDeleteModal(false)}
+                    className="flex-1 px-4 py-2 rounded border border-slate-200 text-xs font-bold text-slate-500 bg-white hover:bg-slate-50 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="flex-1 px-6 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-bold shadow-lg shadow-indigo-500/30 hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0 transition-all duration-200"
+                    onClick={confirmDelete}
+                    className="flex-1 px-4 py-2 rounded bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm transition-colors"
                   >
-                    {saving
-                      ? "Saving..."
-                      : editSupplier
-                        ? "Update Supplier"
-                        : "Save Supplier"}
+                    Delete
                   </button>
                 </div>
               </motion.div>

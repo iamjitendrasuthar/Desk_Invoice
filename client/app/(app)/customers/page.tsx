@@ -14,9 +14,10 @@ import {
   Phone,
   Mail,
   MapPin,
-  Briefcase,
   ChevronLeft,
   ChevronRight,
+  AlertCircle,
+  SlidersHorizontal,
 } from "lucide-react";
 
 interface Customer {
@@ -41,34 +42,41 @@ const initForm = {
   notes: "",
 };
 
-const LIMIT = 15;
+const LIMIT = 10;
+
+const springTransition = { type: "spring", stiffness: 240, damping: 26 };
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    transition: { staggerChildren: 0.05, delayChildren: 0.1 },
+    transition: { staggerChildren: 0.02, delayChildren: 0.01 },
   },
 };
 
 const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 15 },
-  show: {
+  hidden: { opacity: 0, y: 8 },
+  show: { opacity: 1, y: 0, transition: springTransition },
+};
+
+const drawerVariants: Variants = {
+  hidden: { x: "100%", opacity: 0.95 },
+  visible: {
+    x: 0,
     opacity: 1,
-    y: 0,
-    transition: { type: "spring", stiffness: 400, damping: 30 },
+    transition: { type: "spring", damping: 28, stiffness: 220 },
+  },
+  exit: {
+    x: "100%",
+    opacity: 0.95,
+    transition: { duration: 0.18, ease: "easeInOut" },
   },
 };
 
 const modalVariants: Variants = {
-  hidden: { opacity: 0, scale: 0.97, y: 10 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    transition: { type: "spring", damping: 30, stiffness: 400 },
-  },
-  exit: { opacity: 0, scale: 0.97, y: -10, transition: { duration: 0.15 } },
+  hidden: { opacity: 0, scale: 0.96, y: 8 },
+  visible: { opacity: 1, scale: 1, y: 0, transition: springTransition },
+  exit: { opacity: 0, scale: 0.96, y: -6, transition: { duration: 0.12 } },
 };
 
 export default function CustomersPage() {
@@ -82,6 +90,9 @@ export default function CustomersPage() {
   const [form, setForm] = useState<any>(initForm);
   const [saving, setSaving] = useState(false);
 
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
 
   const fetchCustomers = useCallback(async () => {
@@ -90,6 +101,7 @@ export default function CustomersPage() {
       const params: any = { page, limit: LIMIT };
       if (search) params.search = search;
       const r = await api.get("/customers", { params });
+
       const customerList = Array.isArray(r?.data?.customers)
         ? r.data.customers
         : Array.isArray(r?.data?.data)
@@ -135,6 +147,10 @@ export default function CustomersPage() {
   };
 
   const handleSave = async () => {
+    if (!form.name) {
+      alert("Customer name is required");
+      return;
+    }
     setSaving(true);
     try {
       if (editCustomer) await api.put(`/customers/${editCustomer._id}`, form);
@@ -142,19 +158,29 @@ export default function CustomersPage() {
       setShowModal(false);
       fetchCustomers();
     } catch (e: any) {
-      alert(e.response?.data?.message || "Error saving");
+      alert(e.response?.data?.message || "Error saving customer records");
     } finally {
       setSaving(false);
     }
   };
 
-  const typeColors: Record<string, string> = {
-    retail: "bg-blue-50 text-blue-600 border border-blue-100",
-    wholesale: "bg-purple-50 text-purple-600 border border-purple-100",
-    regular: "bg-emerald-50 text-emerald-600 border border-emerald-100",
+  const triggerDelete = (id: string) => {
+    setDeleteId(id);
+    setShowDeleteModal(true);
   };
 
-  // Page numbers to show (max 5 around current)
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    try {
+      await api.delete(`/customers/${deleteId}`);
+      setShowDeleteModal(false);
+      setDeleteId(null);
+      fetchCustomers();
+    } catch (e: any) {
+      alert(e.response?.data?.message || "Error deleting parameter");
+    }
+  };
+
   const getPageNumbers = () => {
     const pages: (number | "...")[] = [];
     if (totalPages <= 5) {
@@ -177,98 +203,126 @@ export default function CustomersPage() {
 
   return (
     <AppLayout>
-      <div className="relative min-h-screen bg-[#f8fafc] text-slate-900 font-sans">
+      {/* Outer View Canvas Framework Layer */}
+      <div className="min-h-screen bg-[#F5F5F5] text-[#334155] antialiased font-sans pb-16">
         <motion.div
-          className="relative z-10 max-w-7xl mx-auto space-y-6 p-4 sm:p-6 lg:p-8"
+          className="w-full mx-auto px-4 sm:px-8 py-6 space-y-5"
           variants={containerVariants}
           initial="hidden"
           animate="show"
         >
-          {/* Header */}
-          <motion.div
-            variants={itemVariants}
-            className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-2"
-          >
-            <div>
-              <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
-                Client Roster
-              </h1>
-              <p className="text-slate-500 text-sm font-medium mt-2">
-                Managing{" "}
-                <span className="font-bold text-slate-700">
-                  {total} active clients
-                </span>
-              </p>
+          {/* Section Breadcrumbs Header Block */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <h1 className="text-2xl font-bold tracking-tight text-[#1e293b]">
+              Customer list
+            </h1>
+            <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
+              <span className="hover:text-slate-800 cursor-pointer">🏠</span>
+              <span>/</span>
+              <span className="hover:text-slate-800 cursor-pointer">
+                CRM Directory
+              </span>
+              <span>/</span>
+              <span className="text-slate-600 font-semibold">
+                Customer List
+              </span>
             </div>
-            <button
-              onClick={openAdd}
-              className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/30 hover:-translate-y-0.5 transition-all duration-200"
-            >
-              <Plus className="w-4 h-4 stroke-[3]" /> Add Client
-            </button>
-          </motion.div>
+          </div>
 
-          {/* Search */}
-          <motion.div variants={itemVariants} className="relative max-w-md">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              className="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-200 bg-white text-sm font-medium text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-400"
-              placeholder="Search clients by name, email, or phone..."
-            />
-          </motion.div>
-
-          {/* Table */}
+          {/* Main Workspace Frame Card Sheet Layout */}
           <motion.div
             variants={itemVariants}
-            className="bg-white border border-slate-100 rounded-3xl p-2 md:p-6 shadow-sm"
+            className="bg-white border border-slate-200/60 rounded-lg shadow-sm p-6 space-y-6"
           >
-            <div className="overflow-x-auto rounded-2xl border border-slate-100">
-              <table className="w-full text-left border-collapse min-w-[800px]">
+            {/* Action Bar Sub-elements Configuration Menu */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+              {/* Entries Per Page - Hidden on Mobile, Visible on Desktop */}
+              <div className="hidden sm:flex items-center gap-2 text-sm text-slate-600">
+                <div className="relative inline-block">
+                  <select className="appearance-none border border-slate-200 rounded-md px-4 py-2 pr-10 bg-white text-sm font-semibold text-slate-700 focus:outline-none focus:border-slate-400">
+                    <option>10</option>
+                    <option>25</option>
+                    <option>50</option>
+                  </select>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-xs text-slate-400">
+                    ▼
+                  </span>
+                </div>
+                <span className="text-sm font-medium text-slate-500">
+                  entries per page
+                </span>
+              </div>
+
+              {/* Search and Add Customer Action Controls */}
+              <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
+                {/* Search Inputs - Hidden on Mobile, Visible on Desktop */}
+                <div className="hidden sm:block relative sm:w-64">
+                  <input
+                    value={search}
+                    onChange={(e) => {
+                      setSearch(e.target.value);
+                      setPage(1);
+                    }}
+                    className="w-full px-4 py-2 border border-slate-200 rounded-md bg-white text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-slate-400 transition-colors"
+                    placeholder="Search..."
+                  />
+                </div>
+
+                {/* Filters Trigger Button - Hidden on Mobile, Visible on Desktop */}
+                <button className="hidden sm:block p-2.5 border border-slate-200 rounded-md text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors">
+                  <SlidersHorizontal className="w-4 h-4" />
+                </button>
+
+                {/* Add Customer Button - Full width on Mobile, Auto width on Desktop */}
+                <button
+                  onClick={openAdd}
+                  className="flex items-center justify-center gap-2 bg-[#007676] hover:bg-[#005f5f] text-white px-5 py-2 rounded-md text-sm font-bold tracking-wide transition-all shadow-xs w-full sm:w-auto"
+                >
+                  <Plus className="w-4 h-4 stroke-[3]" /> Add Customer
+                </button>
+              </div>
+            </div>
+
+            {/* High Visibility Table Module */}
+            <div className="overflow-x-auto -mx-6">
+              <table className="w-full text-left border-collapse min-w-[1000px]">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100">
-                    <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-wider">
-                      Customer
+                  <tr className="border-b border-slate-100 bg-[#f8fafc]">
+                    <th className="pl-6 px-4 py-4.5 text-xs font-bold text-[#475569] uppercase tracking-wider select-none w-1/4">
+                      CUSTOMER
                     </th>
-                    <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-wider">
-                      Contact
+                    <th className="px-4 py-4.5 text-xs font-bold text-[#475569] uppercase tracking-wider select-none w-1/4">
+                      CONTACT
                     </th>
-                    <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-wider">
-                      Type
+                    <th className="px-4 py-4.5 text-xs font-bold text-[#475569] uppercase tracking-wider select-none text-center">
+                      TYPE
                     </th>
-                    <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-wider text-right">
-                      Total Spent
+                    <th className="px-4 py-4.5 text-xs font-bold text-[#475569] uppercase tracking-wider select-none text-center">
+                      TOTAL SPENT
                     </th>
-                    <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-wider text-right">
-                      Orders
+                    <th className="px-4 py-4.5 text-xs font-bold text-[#475569] uppercase tracking-wider select-none text-center">
+                      ORDERS
                     </th>
-                    <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-wider text-right">
-                      Actions
+                    <th className="pr-6 px-4 py-4.5 text-xs font-bold text-[#475569] uppercase tracking-wider select-none text-center w-32">
+                      ACTIONS
                     </th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-slate-100 bg-white">
                   {loading ? (
                     <tr>
-                      <td colSpan={6} className="text-center py-16">
-                        <div className="inline-flex items-center justify-center w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin" />
+                      <td colSpan={6} className="text-center py-20">
+                        <div className="inline-flex items-center justify-center w-8 h-8 border-2 border-slate-200 border-t-[#007676] rounded-full animate-spin" />
                       </td>
                     </tr>
                   ) : customers.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="text-center py-16">
-                        <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                          <Users className="w-8 h-8 text-slate-300" />
+                      <td colSpan={6} className="text-center py-20">
+                        <div className="w-12 h-12 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                          <Users className="w-6 h-6 text-slate-300" />
                         </div>
-                        <p className="text-slate-500 font-bold">
-                          No clients found
-                        </p>
-                        <p className="text-slate-400 text-sm mt-1">
-                          Try adjusting your search criteria
+                        <p className="text-sm font-semibold text-slate-400">
+                          No customer data rows present in register module.
                         </p>
                       </td>
                     </tr>
@@ -276,78 +330,78 @@ export default function CustomersPage() {
                     customers.map((c) => (
                       <tr
                         key={c._id}
-                        className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors group"
+                        className="hover:bg-slate-50/40 transition-colors duration-100 group"
                       >
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100/50 flex items-center justify-center text-sm font-extrabold">
-                              {c.name[0].toUpperCase()}
+                        {/* CUSTOMER PROFILE ROW CELL */}
+                        <td className="pl-6 px-4 py-5">
+                          <div className="flex items-center gap-3.5">
+                            <div className="w-11 h-11 rounded-lg bg-[#eff6ff] flex items-center justify-center text-[#4f46e5] font-bold text-base shrink-0 shadow-xs">
+                              {c.name ? c.name[0].toUpperCase() : "A"}
                             </div>
-                            <div>
-                              <p className="font-extrabold text-sm text-slate-900">
-                                {c.name}
+                            <div className="min-w-0">
+                              <p className="font-bold text-sm text-[#0f172a] tracking-wide">
+                                {c.name || "Amit Patel"}
                               </p>
                               {c.gstin && (
-                                <p className="text-xs font-bold text-slate-400 mt-0.5">
-                                  GST: {c.gstin}
-                                </p>
+                                <span className="text-[11px] font-mono text-slate-400 block mt-0.5">
+                                  GSTIN: {c.gstin.toUpperCase()}
+                                </span>
                               )}
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="space-y-1.5">
+
+                        {/* CONTACT FIELD COLUMN ROW CELL */}
+                        <td className="px-4 py-5">
+                          <div className="flex flex-col space-y-1.5 text-[13px] font-medium text-[#475569]">
                             {c.phone && (
-                              <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
-                                <Phone className="w-3.5 h-3.5 text-slate-400" />
+                              <span className="flex items-center gap-2">
+                                <Phone className="w-4 h-4 text-slate-400 shrink-0 stroke-[1.8]" />
                                 {c.phone}
-                              </div>
+                              </span>
                             )}
                             {c.email && (
-                              <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
-                                <Mail className="w-3.5 h-3.5 text-slate-400" />
+                              <span className="flex items-center gap-2">
+                                <Mail className="w-4 h-4 text-slate-400 shrink-0 stroke-[1.8]" />
                                 {c.email}
-                              </div>
+                              </span>
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`text-xs px-3 py-1 rounded-lg font-extrabold uppercase tracking-wider ${typeColors[c.type] || "bg-slate-100 text-slate-600 border border-slate-200"}`}
-                          >
-                            {c.type || "retail"}
+
+                        {/* CUSTOMER TYPE CAPSULE PILL CELL */}
+                        <td className="px-4 py-5 text-center">
+                          <span className="inline-block text-[11px] font-bold uppercase tracking-wider text-[#334155] bg-[#f1f5f9] border border-slate-200 px-3 py-1 rounded-md min-w-[80px]">
+                            {c.type || "RETAIL"}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-right">
-                          <span className="text-sm font-extrabold text-slate-900 bg-slate-50 px-3 py-1.5 rounded-lg">
+
+                        {/* TOTAL SPENT VALUE BLOCK LAYER CELL */}
+                        <td className="px-4 py-5 text-center">
+                          <span className="inline-block text-sm font-bold text-[#0f172a] bg-[#f8fafc] border border-slate-100 px-3 py-1.5 rounded-lg shadow-2xs font-sans">
                             {formatCurrency(c.totalPurchases)}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-right text-sm font-bold text-slate-500">
-                          {c.totalOrders}
+
+                        {/* TOTAL ORDERS NUMBER CELL */}
+                        <td className="px-4 py-5 text-center text-sm font-semibold text-[#475569]">
+                          {c.totalOrders || 0}
                         </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
+
+                        {/* ACTION PANEL CONTROL INTERACTION CELL */}
+                        <td className="pr-6 px-4 py-5 text-center">
+                          <div className="flex items-center justify-center gap-4">
                             <button
                               onClick={() => openEdit(c)}
-                              className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                              className="text-slate-400 hover:text-slate-700 transition-colors p-1"
                             >
-                              <Edit2 className="w-4 h-4" />
+                              <Edit2 className="w-4 h-4 stroke-[1.8]" />
                             </button>
                             <button
-                              onClick={async () => {
-                                if (
-                                  confirm(
-                                    "Are you sure you want to delete this client?",
-                                  )
-                                ) {
-                                  await api.delete(`/customers/${c._id}`);
-                                  fetchCustomers();
-                                }
-                              }}
-                              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                              onClick={() => triggerDelete(c._id)}
+                              className="text-slate-400 hover:text-rose-600 transition-colors p-1"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-4 h-4 stroke-[1.8]" />
                             </button>
                           </div>
                         </td>
@@ -358,31 +412,24 @@ export default function CustomersPage() {
               </table>
             </div>
 
-            {/* Pagination */}
+            {/* Desktop & Mobile Dashboard Pagination Controllers Row */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-5 pt-5 border-t border-slate-100 flex-wrap gap-3">
-                <p className="text-xs font-bold text-slate-400">
-                  Page <span className="text-slate-700">{page}</span> of{" "}
-                  <span className="text-slate-700">{totalPages}</span>{" "}
-                  &nbsp;·&nbsp; <span className="text-slate-700">{total}</span>{" "}
-                  total
-                </p>
-
-                <div className="flex items-center gap-1">
-                  {/* Prev */}
+              <div className="flex flex-col sm:flex-row items-center justify-between pt-4 border-t border-slate-100 gap-3">
+                <span className="text-sm text-slate-500 font-medium order-2 sm:order-1 text-center sm:text-left w-full sm:w-auto">
+                  Showing {page} to {totalPages} of {total} entries
+                </span>
+                <div className="flex items-center gap-1.5 order-1 sm:order-2 justify-end w-full sm:w-auto">
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className="p-2 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-indigo-600 hover:border-indigo-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    className="p-1.5 border border-slate-200 rounded-md hover:bg-slate-50 disabled:opacity-40 transition-colors text-slate-600"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
-
-                  {/* Page numbers */}
                   {getPageNumbers().map((p, i) =>
                     p === "..." ? (
                       <span
-                        key={`ellipsis-${i}`}
+                        key={i}
                         className="px-2 text-slate-400 text-sm font-bold select-none"
                       >
                         …
@@ -391,22 +438,16 @@ export default function CustomersPage() {
                       <button
                         key={p}
                         onClick={() => setPage(p as number)}
-                        className={`w-9 h-9 rounded-xl text-sm font-extrabold transition-all ${
-                          page === p
-                            ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/30"
-                            : "border border-slate-200 bg-white text-slate-600 hover:text-indigo-600 hover:border-indigo-200"
-                        }`}
+                        className={`px-3 py-1 text-sm font-bold border rounded-md transition-all ${page === p ? "bg-[#007676] text-white border-[#007676]" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}
                       >
                         {p}
                       </button>
                     ),
                   )}
-
-                  {/* Next */}
                   <button
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
-                    className="p-2 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-indigo-600 hover:border-indigo-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    className="p-1.5 border border-slate-200 rounded-md hover:bg-slate-50 disabled:opacity-40 transition-colors text-slate-600"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
@@ -417,7 +458,7 @@ export default function CustomersPage() {
         </motion.div>
       </div>
 
-      {/* Modal */}
+      {/* Slide-Over Menu Panel Sheet View Layer */}
       <AnimatePresence>
         {showModal && (
           <>
@@ -425,61 +466,54 @@ export default function CustomersPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-slate-900/40"
+              className="fixed inset-0 z-40 bg-slate-950/20 backdrop-blur-xs"
               onClick={() => setShowModal(false)}
             />
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
-              <motion.div
-                variants={modalVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                className="bg-white rounded-3xl border border-slate-100 shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pointer-events-auto flex flex-col"
-              >
-                {/* Header */}
-                <div className="flex items-center justify-between p-6 md:p-8 border-b border-slate-100 bg-slate-50 sticky top-0 z-10">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100">
-                      <Briefcase className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h2 className="font-extrabold text-xl text-slate-900">
-                        {editCustomer
-                          ? "Edit Client Profile"
-                          : "New Client Profile"}
-                      </h2>
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">
-                        {editCustomer ? "Update Information" : "Create Record"}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="p-2 bg-white hover:bg-slate-100 text-slate-400 hover:text-slate-600 border border-slate-200 rounded-xl transition-all"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
 
-                {/* Body */}
-                <div className="p-6 md:p-8 space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                        Full Name / Company Name *
-                      </label>
-                      <input
-                        type="text"
-                        value={form.name}
-                        onChange={(e) =>
-                          setForm((p: any) => ({ ...p, name: e.target.value }))
-                        }
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all"
-                        placeholder="e.g. Acme Corp or Jane Doe"
-                      />
-                    </div>
+            <motion.div
+              variants={drawerVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="fixed top-0 right-0 bottom-0 z-50 w-full max-w-md bg-white border-l border-slate-200 flex flex-col pointer-events-auto shadow-2xl text-slate-800"
+            >
+              <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/80 sticky top-0 z-10">
+                <div>
+                  <h2 className="font-bold text-sm text-slate-900 tracking-wide">
+                    {editCustomer
+                      ? "Edit Customer Details"
+                      : "Add New Customer"}
+                  </h2>
+                </div>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="p-1 hover:bg-slate-100 text-slate-400 hover:text-slate-900 border border-slate-200 rounded transition-all"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Form entries layout metrics */}
+              <div className="p-5 space-y-4 flex-1 overflow-y-auto bg-white">
+                <div className="space-y-3.5">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 mb-1">
+                      Customer Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={form.name}
+                      onChange={(e) =>
+                        setForm((p: any) => ({ ...p, name: e.target.value }))
+                      }
+                      className="w-full px-3 py-2 rounded border border-slate-200 bg-slate-50/50 text-xs font-medium text-slate-800 focus:bg-white focus:border-slate-400 focus:outline-none transition-all"
+                      placeholder="Full Identity Name"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      <label className="block text-[11px] font-bold text-slate-500 mb-1">
                         Email Address
                       </label>
                       <input
@@ -488,12 +522,12 @@ export default function CustomersPage() {
                         onChange={(e) =>
                           setForm((p: any) => ({ ...p, email: e.target.value }))
                         }
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all"
-                        placeholder="jane@example.com"
+                        className="w-full px-3 py-2 rounded border border-slate-200 bg-slate-50/50 text-xs font-medium text-slate-800 focus:bg-white focus:border-slate-400 focus:outline-none transition-all"
+                        placeholder="name@example.com"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      <label className="block text-[11px] font-bold text-slate-500 mb-1">
                         Phone Number
                       </label>
                       <input
@@ -502,13 +536,16 @@ export default function CustomersPage() {
                         onChange={(e) =>
                           setForm((p: any) => ({ ...p, phone: e.target.value }))
                         }
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all"
-                        placeholder="+91 98765 43210"
+                        className="w-full px-3 py-2 rounded border border-slate-200 bg-slate-50/50 text-xs font-medium text-slate-800 focus:bg-white focus:border-slate-400 focus:outline-none transition-all"
+                        placeholder="Mobile Number"
                       />
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                        GST Number
+                      <label className="block text-[11px] font-bold text-slate-500 mb-1">
+                        GSTIN Code
                       </label>
                       <input
                         type="text"
@@ -516,125 +553,177 @@ export default function CustomersPage() {
                         onChange={(e) =>
                           setForm((p: any) => ({ ...p, gstin: e.target.value }))
                         }
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all uppercase"
-                        placeholder="22AAAAA0000A1Z5"
+                        className="w-full px-3 py-2 rounded border border-slate-200 bg-slate-50/50 text-xs font-medium text-slate-800 focus:bg-white focus:border-slate-400 focus:outline-none uppercase transition-all"
+                        placeholder="GST identification lookup"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                        Client Type
+                      <label className="block text-[11px] font-bold text-slate-500 mb-1">
+                        Customer Type
                       </label>
                       <select
                         value={form.type}
                         onChange={(e) =>
                           setForm((p: any) => ({ ...p, type: e.target.value }))
                         }
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all appearance-none cursor-pointer"
+                        className="w-full px-3 py-2 rounded border border-slate-200 bg-slate-50/50 text-xs font-medium text-slate-600 focus:bg-white focus:border-slate-400 focus:outline-none cursor-pointer"
                       >
-                        <option value="retail">Retail</option>
-                        <option value="wholesale">Wholesale</option>
-                        <option value="regular">Regular</option>
+                        <option value="RETAIL">Retail</option>
+                        <option value="WHOLESALE">Wholesale</option>
+                        <option value="REGULAR">Regular</option>
                       </select>
-                    </div>
-                  </div>
-
-                  <div className="h-px w-full bg-slate-100" />
-
-                  <div>
-                    <h3 className="flex items-center gap-2 text-sm font-extrabold text-slate-800 mb-4">
-                      <MapPin className="w-4 h-4 text-indigo-500" /> Location
-                      Details
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="md:col-span-3">
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                          Street Address
-                        </label>
-                        <input
-                          value={form.address?.street || ""}
-                          onChange={(e) =>
-                            setForm((p: any) => ({
-                              ...p,
-                              address: { ...p.address, street: e.target.value },
-                            }))
-                          }
-                          className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all"
-                          placeholder="123 Design Studio St."
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                          City
-                        </label>
-                        <input
-                          value={form.address.city}
-                          onChange={(e) =>
-                            setForm((p: any) => ({
-                              ...p,
-                              address: { ...p.address, city: e.target.value },
-                            }))
-                          }
-                          className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all"
-                          placeholder="Mumbai"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                          State
-                        </label>
-                        <input
-                          value={form.address.state}
-                          onChange={(e) =>
-                            setForm((p: any) => ({
-                              ...p,
-                              address: { ...p.address, state: e.target.value },
-                            }))
-                          }
-                          className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all"
-                          placeholder="Maharashtra"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                          Pincode
-                        </label>
-                        <input
-                          value={form.address.pincode || ""}
-                          onChange={(e) =>
-                            setForm((p: any) => ({
-                              ...p,
-                              address: {
-                                ...p.address,
-                                pincode: e.target.value,
-                              },
-                            }))
-                          }
-                          className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all"
-                          placeholder="400001"
-                        />
-                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Footer */}
-                <div className="flex gap-4 p-6 md:p-8 border-t border-slate-100 bg-slate-50 mt-auto rounded-b-3xl">
+                <div className="h-px w-full bg-slate-100" />
+
+                <div className="space-y-3">
+                  <h3 className="flex items-center gap-1.5 text-xs font-bold text-slate-700 uppercase tracking-wide">
+                    <MapPin className="w-3.5 h-3.5 text-slate-400" /> Core
+                    Location Details
+                  </h3>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 mb-1">
+                      Street Address
+                    </label>
+                    <input
+                      type="text"
+                      value={form.address?.street || ""}
+                      onChange={(e) =>
+                        setForm((p: any) => ({
+                          ...p,
+                          address: { ...p.address, street: e.target.value },
+                        }))
+                      }
+                      className="w-full px-3 py-2 rounded border border-slate-200 bg-slate-50/50 text-xs font-medium text-slate-800 focus:bg-white focus:border-slate-400 focus:outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">
+                        City
+                      </label>
+                      <input
+                        type="text"
+                        value={form.address?.city || ""}
+                        onChange={(e) =>
+                          setForm((p: any) => ({
+                            ...p,
+                            address: { ...p.address, city: e.target.value },
+                          }))
+                        }
+                        className="w-full px-2.5 py-1.5 rounded border border-slate-200 bg-slate-50/50 text-xs font-medium text-slate-800 focus:bg-white focus:border-slate-400 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">
+                        State
+                      </label>
+                      <input
+                        type="text"
+                        value={form.address?.state || ""}
+                        onChange={(e) =>
+                          setForm((p: any) => ({
+                            ...p,
+                            address: { ...p.address, state: e.target.value },
+                          }))
+                        }
+                        className="w-full px-2.5 py-1.5 rounded border border-slate-200 bg-slate-50/50 text-xs font-medium text-slate-800 focus:bg-white focus:border-slate-400 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">
+                        Pincode
+                      </label>
+                      <input
+                        type="text"
+                        value={form.address?.pincode || ""}
+                        onChange={(e) =>
+                          setForm((p: any) => ({
+                            ...p,
+                            address: { ...p.address, pincode: e.target.value },
+                          }))
+                        }
+                        className="w-full px-2.5 py-1.5 rounded border border-slate-200 bg-slate-50/50 text-xs font-medium text-slate-800 focus:bg-white focus:border-slate-400 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 p-5 border-t border-slate-200 bg-slate-50/80 sticky bottom-0">
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="flex-1 px-4 py-2 rounded border border-slate-200 bg-white text-xs font-semibold text-slate-500 hover:bg-slate-100 transition-all shadow-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="flex-1 px-4 py-2 rounded bg-[#007676] hover:bg-[#005f5f] text-white text-xs font-semibold transition-all shadow-xs"
+                >
+                  {saving
+                    ? "Saving..."
+                    : editCustomer
+                      ? "Save Changes"
+                      : "Create Customer"}
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Confirmation Modal Operations Layout Pop-Up Section */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-slate-950/20 backdrop-blur-xs"
+              onClick={() => setShowDeleteModal(false)}
+            />
+
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+              <motion.div
+                variants={modalVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="bg-white rounded border border-slate-200 w-full max-w-sm pointer-events-auto shadow-2xl p-5 text-center space-y-4"
+              >
+                <div className="w-10 h-10 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-500 mx-auto">
+                  <AlertCircle className="w-5 h-5 stroke-[2.2]" />
+                </div>
+
+                <div className="space-y-1">
+                  <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+                    Delete Customer Record?
+                  </h3>
+                  <p className="text-xs font-medium text-slate-400 px-2 leading-relaxed">
+                    This step removes the dashboard memory ledger instance for
+                    this customer completely.
+                  </p>
+                </div>
+
+                <div className="flex gap-2.5 pt-1">
                   <button
-                    onClick={() => setShowModal(false)}
-                    className="flex-1 px-6 py-3.5 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all"
+                    onClick={() => setShowDeleteModal(false)}
+                    className="flex-1 px-4 py-2 rounded border border-slate-200 text-xs font-bold text-slate-500 bg-white hover:bg-slate-50 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="flex-1 px-6 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-bold shadow-lg shadow-indigo-500/30 hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0 transition-all duration-200"
+                    onClick={confirmDelete}
+                    className="flex-1 px-4 py-2 rounded bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm transition-colors"
                   >
-                    {saving
-                      ? "Saving..."
-                      : editCustomer
-                        ? "Update Client"
-                        : "Save Client"}
+                    Delete
                   </button>
                 </div>
               </motion.div>
