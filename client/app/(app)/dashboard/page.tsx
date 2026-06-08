@@ -439,7 +439,7 @@ export default function DashboardPage() {
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart
                       data={chartData}
-                      margin={{ top: 10, right: 0, left: -20, bottom: 0 }}
+                      margin={{ top: 20, right: -30, left: -10, bottom: 0 }}
                     >
                       <defs>
                         <linearGradient
