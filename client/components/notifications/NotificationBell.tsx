@@ -101,8 +101,8 @@ export default function NotificationBell({ className }: NotificationBellProps) {
       {/* ── Bell Button ─────────────────────────────────────────────────── */}
       <button
         onClick={toggleOpen}
-        // className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-white border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 shadow-sm group"
         aria-label="Notifications"
+        className="flex items-center justify-center w-full h-full"
       >
         <Bell
           className={`w-5 h-5 transition-colors ${

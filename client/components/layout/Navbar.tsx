@@ -18,9 +18,10 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 interface NavbarProps {
   onMenuToggle?: () => void;
+  logout?: () => void;
 }
 
-export default function Navbar({ onMenuToggle }: NavbarProps) {
+export default function Navbar({ onMenuToggle, logout }: NavbarProps) {
   // Shared classes: removed shadows, used thin borders
   const actionBtnClass =
     "w-10 h-10 flex items-center justify-center bg-white border border-slate-200 text-slate-400 rounded-full hover:border-slate-300 transition-colors";
@@ -49,8 +50,6 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
 
         {/* RIGHT CONTROLS */}
         <div className="flex items-center gap-3">
-    
-
           <button className={actionBtnClass}>
             <Moon className="w-6 h-6" />
           </button>
@@ -92,7 +91,10 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
 
               <div className="my-2 border-t border-slate-100" />
 
-              <DropdownMenu.Item className="flex items-center justify-center p-3 text-emerald-800 font-medium border border-emerald-600 rounded-full cursor-pointer text-sm mt-2 hover:bg-emerald-50">
+              <DropdownMenu.Item
+                onClick={logout}
+                className="flex items-center justify-center p-3 text-emerald-800 font-medium border border-emerald-600 rounded-full cursor-pointer text-sm mt-2 hover:bg-emerald-50"
+              >
                 <LogOut className="w-4 h-4 mr-2" /> Log Out
               </DropdownMenu.Item>
             </DropdownMenu.Content>
