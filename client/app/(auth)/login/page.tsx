@@ -23,13 +23,13 @@ export default function LoginPage() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] flex items-center justify-center p-6 selection:bg-[#006666]/10">
+    <div className="min-h-screen bg-[#F5F5F5] flex flex-col items-center pt-15 p-4 font-sans antialiased">
+      {" "}
       {/* Decorative Background Elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-[#006666]/5 rounded-full blur-[100px]" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-amber-400/10 rounded-full blur-[100px]" />
       </div>
-
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
