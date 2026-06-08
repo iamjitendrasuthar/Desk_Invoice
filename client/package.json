@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@radix-ui/react-dropdown-menu": "^2.1.17",
     "axios": "^1.16.1",
     "framer-motion": "^12.39.0",
     "lucide-react": "^1.16.0",

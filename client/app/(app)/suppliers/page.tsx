@@ -58,6 +58,7 @@ const containerVariants: Variants = {
 
 const itemVariants: Variants = {
   hidden: { opacity: 0, y: 8 },
+  // @ts-ignore
   show: { opacity: 1, y: 0, transition: springTransition },
 };
 
@@ -77,6 +78,7 @@ const drawerVariants: Variants = {
 
 const modalVariants: Variants = {
   hidden: { opacity: 0, scale: 0.96, y: 8 },
+  // @ts-ignore
   visible: { opacity: 1, scale: 1, y: 0, transition: springTransition },
   exit: { opacity: 0, scale: 0.96, y: -6, transition: { duration: 0.12 } },
 };

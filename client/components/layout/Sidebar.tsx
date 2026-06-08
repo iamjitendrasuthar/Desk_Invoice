@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Layers,
   Grid,
+  ChevronLeft,
 } from "lucide-react";
 
 const navigationGroups = [
@@ -59,7 +60,7 @@ function SidebarContent({
   return (
     <div className="flex flex-col h-full w-[300px] bg-[#006666] text-white lg:rounded-tr-[25px] lg:rounded-br-[25px] pb-6 relative overflow-hidden font-sans antialiased select-none">
       {/* HEADER SECTION */}
-      <div className="flex items-center justify-between pl-7 pr-6 pt-8 pb-6 border-b border-white/[0.06] mx-2">
+      <div className="flex items-center justify-between pl-7 pr-6 pt-8 pb-6 border-b border-white/[0.300] mx-2">
         <Link
           href="/"
           className="flex items-center gap-3 group"
@@ -75,17 +76,11 @@ function SidebarContent({
           </div>
         </Link>
 
-        {/* Desktop Grid Button */}
-        <div className="hidden lg:flex items-center justify-center text-white/70 hover:text-white transition-colors cursor-pointer p-1.5 hover:bg-white/5 rounded-lg">
-          <Grid className="w-[18px] h-[18px] stroke-[2.2]" />
-        </div>
-
-        {/* Mobile Close Button (image_e679da.png ke cross mark ko handle karne ke liye) */}
         <button
           onClick={onClose}
           className="lg:hidden p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all"
         >
-          <X className="w-6 h-6 stroke-[2.5]" />
+          <ChevronLeft className="w-6 h-6 stroke-[2.5] ml-6" />
         </button>
       </div>
 

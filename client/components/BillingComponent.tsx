@@ -45,6 +45,7 @@ const containerVariants: Variants = {
 
 const itemVariants: Variants = {
   hidden: { opacity: 0, y: 8 },
+  // @ts-ignore
   show: { opacity: 1, y: 0, transition: springTransition },
 };
 

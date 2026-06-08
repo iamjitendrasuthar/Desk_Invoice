@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 import type { Notification as AppNotification } from "@/types/notification";
+import { cn } from "@/lib/utils";
 
 // ── Type icon + color per notification type ────────────────────────────────
 const TYPE_CONFIG = {
@@ -98,7 +99,7 @@ export default function NotificationBell() {
       {/* ── Bell Button ─────────────────────────────────────────────────── */}
       <button
         onClick={toggleOpen}
-        className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-white border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 shadow-sm group"
+        // className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-white border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 shadow-sm group"
         aria-label="Notifications"
       >
         <Bell
@@ -110,6 +111,7 @@ export default function NotificationBell() {
         />
 
         {/* Unread badge */}
+        {/* Unread badge */}
         <AnimatePresence>
           {unreadCount > 0 && (
             <motion.span
@@ -118,191 +120,115 @@ export default function NotificationBell() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0, opacity: 0 }}
               transition={{ type: "spring", stiffness: 500, damping: 28 }}
-              className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center shadow-sm shadow-red-300 ring-2 ring-white"
+              // Updated positioning: -top-2 and -right-2 push it further out
+              className="absolute -top-2 -right-3 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center shadow-sm shadow-red-300 ring-2 ring-white"
             >
               {unreadCount > 99 ? "99+" : unreadCount}
             </motion.span>
           )}
         </AnimatePresence>
 
-        {/* Pulse ring when there are unread notifications */}
+        {/* Pulse ring */}
         {unreadCount > 0 && !open && (
-          <span className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full bg-red-400 animate-ping opacity-40 pointer-events-none" />
+          <span className="absolute -top-2 -right-2 w-[18px] h-[18px] rounded-full bg-red-400 animate-ping opacity-40 pointer-events-none" />
         )}
       </button>
 
-      {/* ── Dropdown ────────────────────────────────────────────────────── */}
+      {/* ── Dropdown ── */}
       <AnimatePresence>
         {open && (
           <motion.div
-            key="dropdown"
-            initial={{ opacity: 0, y: -8, scale: 0.97 }}
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.97 }}
-            transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="fixed lg:absolute inset-x-2 lg:inset-x-auto lg:right-0 top-16 lg:top-12 w-auto lg:w-[370px] bg-white/95 backdrop-blur-xl ..."
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            className="fixed lg:absolute inset-x-2 lg:inset-x-auto lg:right-0 top-16 lg:top-14 w-[calc(100vw-16px)] lg:w-[380px] bg-white border border-slate-100 rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] overflow-hidden z-50"
           >
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <Bell className="w-4 h-4 text-indigo-500" />
-                <span className="font-extrabold text-slate-900 text-sm">
+            <div className="flex items-center justify-between px-6 py-5 bg-slate-50/50 border-b border-slate-100">
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm">
                   Notifications
-                </span>
-                {unreadCount > 0 && (
-                  <span className="bg-indigo-100 text-indigo-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                    {unreadCount} new
-                  </span>
-                )}
+                </h3>
               </div>
-
-              <div className="flex items-center gap-1">
-                {unreadCount > 0 && (
-                  <button
-                    onClick={markAllRead}
-                    title="Mark all as read"
-                    className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors"
-                  >
-                    <CheckCheck className="w-3.5 h-3.5" />
-                    All read
-                  </button>
-                )}
-                {hasRead && (
-                  <button
-                    onClick={clearRead}
-                    title="Clear read notifications"
-                    className="flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-red-500 bg-slate-50 hover:bg-red-50 px-2.5 py-1.5 rounded-lg transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Body */}
-            <div className="max-h-[420px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
-              {loading ? (
-                <div className="flex items-center justify-center py-12 gap-2 text-slate-400">
-                  <Loader2 className="w-5 h-5 animate-spin text-indigo-400" />
-                  <span className="text-sm font-bold">Loading…</span>
-                </div>
-              ) : notifications.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-14 gap-3 text-slate-400">
-                  <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center">
-                    <BellOff className="w-6 h-6 text-slate-300" />
-                  </div>
-                  <p className="text-sm font-bold">No notifications yet</p>
-                  <p className="text-xs font-medium text-slate-300">
-                    Customer, payment & stock alerts appear here
-                  </p>
-                </div>
-              ) : (
-                <ul>
-                  <AnimatePresence initial={false}>
-                    {notifications.map((n) => {
-                      const cfg =
-                        // @ts-ignore
-                        TYPE_CONFIG[n.type as keyof typeof TYPE_CONFIG] ??
-                        TYPE_CONFIG.customer_added;
-                      const Icon = cfg.icon;
-                      return (
-                        <motion.li
-                          // @ts-ignore
-                          key={n._id}
-                          initial={{ opacity: 0, x: -8 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{
-                            opacity: 0,
-                            x: 8,
-                            height: 0,
-                            paddingTop: 0,
-                            paddingBottom: 0,
-                          }}
-                          transition={{ duration: 0.18 }}
-                          className={`group relative flex items-start gap-3.5 px-5 py-4 border-b border-slate-50 transition-colors cursor-pointer ${
-                            // @ts-ignore
-                            !n.isRead
-                              ? "bg-indigo-50/40 hover:bg-indigo-50/70"
-                              : "hover:bg-slate-50/70"
-                          }`}
-                          onClick={() =>
-                            // @ts-ignore
-                            !n.isRead && markOneRead(n._id)
-                          }
-                        >
-                          {/* Icon */}
-                          <div
-                            className={`shrink-0 w-9 h-9 rounded-xl ${cfg.bg} ${cfg.text} ring-1 ${cfg.ring} flex items-center justify-center mt-0.5`}
-                          >
-                            <Icon className="w-4 h-4" />
-                          </div>
-                          {/* Text */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2">
-                              <p
-                                className={`text-sm font-extrabold leading-tight truncate ${
-                                  // @ts-ignore
-
-                                  !n.isRead
-                                    ? "text-slate-900"
-                                    : "text-slate-600"
-                                }`}
-                              >
-                                {" "}
-                                {/*  @ts-ignore */}
-                                {n.title}
-                              </p>
-                              <span className="text-[10px] font-bold text-slate-400 shrink-0 mt-0.5">
-                                {/*  @ts-ignore */}
-                                {timeAgo(n.createdAt)}
-                              </span>
-                            </div>
-                            <p className="text-xs font-medium text-slate-500 mt-0.5 leading-relaxed line-clamp-2">
-                              {/*  @ts-ignore */}
-
-                              {n.message}
-                            </p>
-                            <span
-                              className={`inline-block mt-1.5 text-[9px] font-extrabold uppercase tracking-widest px-1.5 py-0.5 rounded-md ${cfg.bg} ${cfg.text}`}
-                            >
-                              {cfg.label}
-                            </span>
-                          </div>
-                          {/* Unread dot */}
-                          {/*  @ts-ignore */}
-                          {!n.isRead && (
-                            <span
-                              className={`absolute left-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full ${cfg.dot}`}
-                            />
-                          )}
-                          {/* Delete button */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                                                        {/*  @ts-ignore */}
-                              deleteOne(n._id);
-                            }}
-                            className="absolute right-3 top-3 opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center rounded-lg hover:bg-red-100 text-slate-300 hover:text-red-500"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </motion.li>
-                      );
-                    })}
-                  </AnimatePresence>
-                </ul>
+              {unreadCount > 0 && (
+                <button
+                  onClick={markAllRead}
+                  className="text-[11px] font-bold text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 rounded-full"
+                >
+                  Mark all read
+                </button>
+              )}
+              {hasRead && (
+                <button
+                  onClick={clearRead}
+                  title="Clear read notifications"
+                  className="flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-red-500 bg-slate-50 hover:bg-red-50 px-2.5 py-1.5 rounded-lg transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
               )}
             </div>
 
-            {/* Footer */}
-            {notifications.length > 0 && (
-              <div className="px-5 py-3 border-t border-slate-100 text-center">
-                <p className="text-xs font-bold text-slate-400">
-                  Showing last {notifications.length} notification
-                  {notifications.length !== 1 ? "s" : ""}
-                </p>
-              </div>
-            )}
+            <div className="max-h-[400px] overflow-y-auto">
+              {loading ? (
+                <div className="flex justify-center py-10">
+                  <Loader2 className="animate-spin text-indigo-500" />
+                </div>
+              ) : typedNotifications.length === 0 ? (
+                <div className="py-12 text-center text-slate-400 text-xs">
+                  No new updates
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-50">
+                  {typedNotifications.map((n) => {
+                    const cfg =
+                      // @ts-ignore
+                      TYPE_CONFIG[n.type as NotificationType] ??
+                      TYPE_CONFIG.customer_added;
+                    const Icon = cfg.icon;
+                    return (
+                      <div
+                        key={n._id}
+                        className={cn(
+                          "flex gap-4 p-5 hover:bg-slate-50 cursor-pointer transition-colors",
+                          !n.isRead && "bg-indigo-50/30",
+                        )}
+                        onClick={() => !n.isRead && markOneRead(n._id)}
+                      >
+                        <div
+                          className={cn(
+                            "w-10 h-10 rounded-2xl flex items-center justify-center shrink-0",
+                            cfg.bg,
+                            cfg.text,
+                          )}
+                        >
+                          <Icon className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-bold text-slate-900 truncate">
+                            {n.title}
+                          </h4>
+                          <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
+                            {n.message}
+                          </p>
+                          <span className="text-[10px] font-bold text-slate-400 mt-2 block">
+                            {timeAgo(n.createdAt)}
+                          </span>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteOne(n._id);
+                          }}
+                          className="text-slate-300 hover:text-red-500"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
