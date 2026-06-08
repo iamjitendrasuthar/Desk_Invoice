@@ -60,9 +60,11 @@ function timeAgo(dateStr: string) {
     month: "short",
   });
 }
-
+interface NotificationBellProps {
+  className?: string; // Yeh line important hai
+}
 // ── Main Component ─────────────────────────────────────────────────────────
-export default function NotificationBell() {
+export default function NotificationBell({ className }: NotificationBellProps) {
   const {
     notifications,
     unreadCount,
