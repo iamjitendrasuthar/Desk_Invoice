@@ -90,7 +90,7 @@ const Field = ({
   children: React.ReactNode;
 }) => (
   <div className="space-y-2">
-    <label className="block text-xs font-bold text-[#475569] uppercase tracking-wider select-none">
+    <label className="block text-xs font-bold text-[#475569] dark:text-slate-400 uppercase tracking-wider select-none">
       {label}
     </label>
     {children}
@@ -98,9 +98,9 @@ const Field = ({
 );
 
 const inputCls =
-  "w-full px-4 py-2 border border-slate-200 rounded-md bg-white text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-slate-400 transition-colors font-medium";
+  "w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700/50 text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-slate-400 dark:focus:border-slate-500 transition-colors font-medium";
 const disabledCls =
-  "w-full px-4 py-2 border border-slate-200 rounded-md bg-[#f8fafc] text-sm font-medium text-slate-400 cursor-not-allowed select-none";
+  "w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-md bg-[#f8fafc] dark:bg-slate-700 text-sm font-medium text-slate-400 dark:text-slate-500 cursor-not-allowed select-none";
 
 const IconInput = ({
   icon: Icon,
@@ -125,7 +125,7 @@ const IconInput = ({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       disabled={disabled}
-      className={`${inputCls} pl-10 ${disabled ? "bg-[#f8fafc] text-slate-400 cursor-not-allowed" : ""}`}
+      className={`${inputCls} pl-10 ${disabled ? "bg-[#f8fafc] dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed" : ""}`}
     />
   </div>
 );
@@ -147,12 +147,11 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("profile");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ── Loading skeleton ──────────────────────────────────────────────────
   if (loading) {
     return (
       <AppLayout>
-        <div className="flex items-center justify-center min-h-[75vh] bg-[#F5F5F5]">
-          <div className="inline-flex items-center justify-center w-8 h-8 border-2 border-slate-200 border-t-[#007676] rounded-full animate-spin" />
+        <div className="flex items-center justify-center min-h-[75vh] bg-[#F5F5F5] dark:bg-[#0f172a]">
+          <div className="inline-flex items-center justify-center w-8 h-8 border-2 border-slate-200 dark:border-slate-600 border-t-[#007676] rounded-full animate-spin" />
         </div>
       </AppLayout>
     );
@@ -163,8 +162,8 @@ export default function SettingsPage() {
 
   return (
     <AppLayout>
-      <div className="min-h-screen bg-[#F5F5F5] text-[#334155] antialiased pb-16 font-sans relative">
-        {/* Error Banner Container */}
+      <div className="min-h-screen bg-[#F5F5F5] dark:bg-[#0f172a] text-[#334155] dark:text-slate-300 antialiased pb-16 font-sans relative transition-colors duration-200">
+        {/* Error Banner */}
         <AnimatePresence>
           {error && (
             <motion.div
@@ -173,13 +172,13 @@ export default function SettingsPage() {
               exit={{ opacity: 0, y: -20 }}
               className="fixed top-4 sm:top-6 left-1/2 -translate-x-1/2 z-50 max-w-xl w-full px-4"
             >
-              <div className="bg-rose-50 border border-rose-200 shadow-xl rounded-lg p-4 flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+              <div className="bg-rose-50 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-800 shadow-xl rounded-lg p-4 flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-rose-900 leading-tight">
+                  <p className="text-xs font-bold text-rose-900 dark:text-rose-300 leading-tight">
                     System Operational Alert
                   </p>
-                  <p className="text-sm font-medium text-rose-600 mt-1">
+                  <p className="text-sm font-medium text-rose-600 dark:text-rose-400 mt-1">
                     {error}
                   </p>
                 </div>
@@ -188,16 +187,16 @@ export default function SettingsPage() {
           )}
         </AnimatePresence>
 
-        {/* Success Toast Notification */}
+        {/* Success Toast */}
         <AnimatePresence>
           {showSuccess && (
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="fixed top-6 right-6 z-50 flex items-center gap-3 bg-emerald-50 border border-emerald-200 text-emerald-700 px-5 py-3 rounded-lg shadow-lg shadow-emerald-500/10"
+              className="fixed top-6 right-6 z-50 flex items-center gap-3 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 px-5 py-3 rounded-lg shadow-lg shadow-emerald-500/10"
             >
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
               <span className="text-sm font-bold">
                 Settings updated successfully!
               </span>
@@ -211,26 +210,32 @@ export default function SettingsPage() {
           initial="hidden"
           animate="show"
         >
-          {/* Header Block Format matching Customer/Product list */}
+          {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-[#1e293b]">
+              <h1 className="text-2xl font-bold tracking-tight text-[#1e293b] dark:text-white">
                 System Settings
               </h1>
-              <p className="hidden sm:block text-sm font-medium text-slate-400 mt-0.5">
+              <p className="hidden sm:block text-sm font-medium text-slate-400 dark:text-slate-500 mt-0.5">
                 Manage your studio preferences and terminal configurations.
               </p>
             </div>
-            <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
-              <span className="hover:text-slate-800 cursor-pointer">🏠</span>
+            <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 font-medium">
+              <span className="hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer">
+                🏠
+              </span>
               <span>/</span>
-              <span className="hover:text-slate-800 cursor-pointer">Setup</span>
+              <span className="hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer">
+                Setup
+              </span>
               <span>/</span>
-              <span className="text-slate-600 font-semibold">Settings</span>
+              <span className="text-slate-600 dark:text-slate-300 font-semibold">
+                Settings
+              </span>
             </div>
           </div>
 
-          {/* Action Row containing Master Save Changes Trigger */}
+          {/* Save Button */}
           <div className="flex justify-end pt-1">
             <button
               onClick={save}
@@ -246,9 +251,9 @@ export default function SettingsPage() {
             </button>
           </div>
 
-          {/* Main Card Sheet Workspace Frame Grid */}
+          {/* Main Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            {/* Left Nav Tabs Column Grid */}
+            {/* Left Nav */}
             <div className="lg:col-span-3 flex flex-col gap-1.5 w-full">
               {SETTINGS_TABS.map((tab) => {
                 const isActive = activeTab === tab.id;
@@ -258,26 +263,26 @@ export default function SettingsPage() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-md transition-all duration-100 border text-left ${
                       isActive
-                        ? "bg-white border-slate-200 shadow-sm text-[#0f172a]"
-                        : "bg-transparent border-transparent hover:bg-white/50 text-slate-500 hover:text-slate-800"
+                        ? "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm text-[#0f172a] dark:text-white"
+                        : "bg-transparent border-transparent hover:bg-white/50 dark:hover:bg-slate-700/50 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
                     }`}
                   >
                     <div
                       className={`w-9 h-9 rounded-md flex items-center justify-center shrink-0 border ${
                         isActive
-                          ? "bg-[#eff6ff] text-[#4f46e5] border-transparent"
-                          : "bg-slate-100 text-slate-400 border-transparent"
+                          ? "bg-[#eff6ff] dark:bg-slate-700 text-[#4f46e5] dark:text-indigo-400 border-transparent"
+                          : "bg-slate-100 dark:bg-slate-700/50 text-slate-400 dark:text-slate-500 border-transparent"
                       }`}
                     >
                       <tab.icon className="w-4 h-4 stroke-[1.8]" />
                     </div>
                     <div className="min-w-0">
                       <p
-                        className={`text-sm font-bold ${isActive ? "text-[#007676]" : "text-slate-700"}`}
+                        className={`text-sm font-bold ${isActive ? "text-[#007676]" : "text-slate-700 dark:text-slate-300"}`}
                       >
                         {tab.label}
                       </p>
-                      <p className="text-xs font-medium text-slate-400 truncate mt-0.5">
+                      <p className="text-xs font-medium text-slate-400 dark:text-slate-500 truncate mt-0.5">
                         {tab.desc}
                       </p>
                     </div>
@@ -286,8 +291,8 @@ export default function SettingsPage() {
               })}
             </div>
 
-            {/* Right Tab Content Slate Panel Board */}
-            <div className="lg:col-span-9 bg-white border border-slate-200/60 rounded-lg shadow-sm p-6 sm:p-8 min-h-[520px]">
+            {/* Right Content Panel */}
+            <div className="lg:col-span-9 bg-white dark:bg-slate-800/70 border border-slate-200/60 dark:border-slate-700/50 rounded-lg shadow-sm p-6 sm:p-8 min-h-[520px]">
               <AnimatePresence mode="wait">
                 {/* ════ PROFILE TAB ════ */}
                 {activeTab === "profile" && (
@@ -300,17 +305,17 @@ export default function SettingsPage() {
                     className="space-y-6"
                   >
                     <div>
-                      <h3 className="text-lg font-bold text-[#1e293b] tracking-wide">
+                      <h3 className="text-lg font-bold text-[#1e293b] dark:text-white tracking-wide">
                         Personal Information
                       </h3>
-                      <p className="text-sm font-medium text-slate-400 mt-0.5">
+                      <p className="text-sm font-medium text-slate-400 dark:text-slate-500 mt-0.5">
                         Update your identity photo avatar and personal master
                         parameters.
                       </p>
                     </div>
 
-                    {/* Avatar Upload Frame Block */}
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 pb-6 border-b border-slate-100">
+                    {/* Avatar Upload */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 pb-6 border-b border-slate-100 dark:border-slate-700">
                       <div
                         className="relative group cursor-pointer w-20 h-20 shrink-0"
                         onClick={() => fileInputRef.current?.click()}
@@ -319,10 +324,10 @@ export default function SettingsPage() {
                           <img
                             src={logoSrc}
                             alt="Studio Logo"
-                            className="w-20 h-20 rounded-md object-cover border border-slate-200 shadow-xs"
+                            className="w-20 h-20 rounded-md object-cover border border-slate-200 dark:border-slate-600 shadow-xs"
                           />
                         ) : (
-                          <div className="w-20 h-20 rounded-md bg-[#eff6ff] border border-slate-100 shadow-2xs flex items-center justify-center text-3xl font-bold text-[#4f46e5]">
+                          <div className="w-20 h-20 rounded-md bg-[#eff6ff] dark:bg-slate-700 border border-slate-100 dark:border-slate-600 shadow-2xs flex items-center justify-center text-3xl font-bold text-[#4f46e5] dark:text-indigo-400">
                             {initials}
                           </div>
                         )}
@@ -345,11 +350,11 @@ export default function SettingsPage() {
                         <button
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
-                          className="text-xs font-bold bg-white border border-slate-200 text-slate-600 px-3 py-2 rounded-md hover:bg-slate-50 transition-colors shadow-2xs"
+                          className="text-xs font-bold bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 px-3 py-2 rounded-md hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors shadow-2xs"
                         >
                           Change Logo / Avatar
                         </button>
-                        <p className="text-xs font-medium text-slate-400">
+                        <p className="text-xs font-medium text-slate-400 dark:text-slate-500">
                           JPG, GIF, PNG or WebP. Max 2MB.
                         </p>
                         {logoPreview && (
@@ -371,7 +376,6 @@ export default function SettingsPage() {
                           }
                         />
                       </Field>
-
                       <Field label="Email Address">
                         <IconInput
                           icon={Mail}
@@ -380,7 +384,6 @@ export default function SettingsPage() {
                           onChange={(v) => updateForm("profile", { email: v })}
                         />
                       </Field>
-
                       <Field label="Phone Number">
                         <IconInput
                           icon={Phone}
@@ -388,7 +391,6 @@ export default function SettingsPage() {
                           onChange={(v) => updateForm("profile", { phone: v })}
                         />
                       </Field>
-
                       <Field label="System Role">
                         <input
                           type="text"
@@ -412,10 +414,10 @@ export default function SettingsPage() {
                     className="space-y-6"
                   >
                     <div>
-                      <h3 className="text-lg font-bold text-[#1e293b] tracking-wide">
+                      <h3 className="text-lg font-bold text-[#1e293b] dark:text-white tracking-wide">
                         Brand Details
                       </h3>
-                      <p className="text-sm font-medium text-slate-400 mt-0.5">
+                      <p className="text-sm font-medium text-slate-400 dark:text-slate-500 mt-0.5">
                         Manage your brand's legal core identity parameters and
                         location records.
                       </p>
@@ -433,7 +435,6 @@ export default function SettingsPage() {
                           />
                         </Field>
                       </div>
-
                       <Field label="GSTIN Number">
                         <input
                           type="text"
@@ -445,7 +446,6 @@ export default function SettingsPage() {
                           placeholder="22AAAAA0000A1Z5"
                         />
                       </Field>
-
                       <Field label="PAN Number">
                         <input
                           type="text"
@@ -459,7 +459,6 @@ export default function SettingsPage() {
                           placeholder="AAAAA0000A"
                         />
                       </Field>
-
                       <Field label="Default Currency">
                         <input
                           type="text"
@@ -468,7 +467,6 @@ export default function SettingsPage() {
                           className={disabledCls}
                         />
                       </Field>
-
                       <div className="md:col-span-2">
                         <Field label="Primary Address">
                           <div className="relative">
@@ -487,7 +485,6 @@ export default function SettingsPage() {
                           </div>
                         </Field>
                       </div>
-
                       <Field label="City">
                         <input
                           type="text"
@@ -498,7 +495,6 @@ export default function SettingsPage() {
                           className={inputCls}
                         />
                       </Field>
-
                       <Field label="State">
                         <input
                           type="text"
@@ -509,7 +505,6 @@ export default function SettingsPage() {
                           className={inputCls}
                         />
                       </Field>
-
                       <Field label="Pincode">
                         <input
                           type="text"
@@ -536,17 +531,17 @@ export default function SettingsPage() {
                     className="space-y-6"
                   >
                     <div>
-                      <h3 className="text-lg font-bold text-[#1e293b] tracking-wide">
+                      <h3 className="text-lg font-bold text-[#1e293b] dark:text-white tracking-wide">
                         Billing & Bank Details
                       </h3>
-                      <p className="text-sm font-medium text-slate-400 mt-0.5">
+                      <p className="text-sm font-medium text-slate-400 dark:text-slate-500 mt-0.5">
                         Invoice configuration properties and payment information
                         logs.
                       </p>
                     </div>
 
                     <div className="space-y-5">
-                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest block pb-1.5 border-b border-slate-100">
+                      <p className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block pb-1.5 border-b border-slate-100 dark:border-slate-700">
                         Invoice Generation Rule
                       </p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -563,7 +558,6 @@ export default function SettingsPage() {
                             placeholder="INV"
                           />
                         </Field>
-
                         <Field label="Default Tax Rate (%)">
                           <input
                             type="number"
@@ -578,7 +572,6 @@ export default function SettingsPage() {
                             className={inputCls}
                           />
                         </Field>
-
                         <div className="md:col-span-2">
                           <Field label="Terms & Conditions">
                             <textarea
@@ -598,7 +591,7 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="space-y-5 pt-4">
-                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest block pb-1.5 border-b border-slate-100">
+                      <p className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block pb-1.5 border-b border-slate-100 dark:border-slate-700">
                         Bank Vault Destination Ledger
                       </p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -612,7 +605,6 @@ export default function SettingsPage() {
                             placeholder="State Bank of India"
                           />
                         </Field>
-
                         <Field label="Account Holder Name">
                           <IconInput
                             icon={User}
@@ -622,7 +614,6 @@ export default function SettingsPage() {
                             }
                           />
                         </Field>
-
                         <Field label="Account Number">
                           <input
                             type="text"
@@ -636,7 +627,6 @@ export default function SettingsPage() {
                             placeholder="XXXX XXXX XXXX"
                           />
                         </Field>
-
                         <Field label="IFSC Code">
                           <input
                             type="text"
@@ -666,10 +656,10 @@ export default function SettingsPage() {
                     className="space-y-6"
                   >
                     <div>
-                      <h3 className="text-lg font-bold text-[#1e293b] tracking-wide">
+                      <h3 className="text-lg font-bold text-[#1e293b] dark:text-white tracking-wide">
                         Security Settings
                       </h3>
-                      <p className="text-sm font-medium text-slate-400 mt-0.5">
+                      <p className="text-sm font-medium text-slate-400 dark:text-slate-500 mt-0.5">
                         Ensure your active operator portal session data has
                         randomized password components.
                       </p>
@@ -703,7 +693,7 @@ export default function SettingsPage() {
                       >
                         Update Password
                       </button>
-                      <p className="text-xs text-slate-400 font-medium text-center italic">
+                      <p className="text-xs text-slate-400 dark:text-slate-500 font-medium text-center italic">
                         * Password alteration communicates with isolation auth
                         routing models independently.
                       </p>
@@ -722,10 +712,10 @@ export default function SettingsPage() {
                     className="space-y-6"
                   >
                     <div>
-                      <h3 className="text-lg font-bold text-[#1e293b] tracking-wide">
+                      <h3 className="text-lg font-bold text-[#1e293b] dark:text-white tracking-wide">
                         App Preferences
                       </h3>
-                      <p className="text-sm font-medium text-slate-400 mt-0.5">
+                      <p className="text-sm font-medium text-slate-400 dark:text-slate-500 mt-0.5">
                         Customize your interactive system dashboard runtime
                         experience.
                       </p>
@@ -770,14 +760,16 @@ function ToggleRow({
 }) {
   const [on, setOn] = useState(defaultOn);
   return (
-    <div className="flex items-center justify-between p-4 rounded-md border border-slate-200/60 bg-white shadow-2xs">
+    <div className="flex items-center justify-between p-4 rounded-md border border-slate-200/60 dark:border-slate-700/50 bg-white dark:bg-slate-800/60 shadow-2xs">
       <div className="flex items-center gap-4 min-w-0">
-        <div className="w-9 h-9 rounded-md bg-[#eff6ff] border border-slate-100 flex items-center justify-center shrink-0">
-          <Icon className="w-4 h-4 text-[#4f46e5] stroke-[1.8]" />
+        <div className="w-9 h-9 rounded-md bg-[#eff6ff] dark:bg-slate-700 border border-slate-100 dark:border-slate-600 flex items-center justify-center shrink-0">
+          <Icon className="w-4 h-4 text-[#4f46e5] dark:text-indigo-400 stroke-[1.8]" />
         </div>
         <div className="min-w-0">
-          <p className="font-bold text-sm text-[#0f172a] truncate">{title}</p>
-          <p className="text-xs font-medium text-slate-400 truncate mt-0.5">
+          <p className="font-bold text-sm text-[#0f172a] dark:text-slate-100 truncate">
+            {title}
+          </p>
+          <p className="text-xs font-medium text-slate-400 dark:text-slate-500 truncate mt-0.5">
             {desc}
           </p>
         </div>
@@ -785,7 +777,7 @@ function ToggleRow({
       <button
         type="button"
         onClick={() => setOn((v) => !v)}
-        className={`w-10 h-5.5 rounded-full relative transition-colors duration-200 shrink-0 ${on ? "bg-[#007676]" : "bg-slate-200"}`}
+        className={`w-10 h-5.5 rounded-full relative transition-colors duration-200 shrink-0 ${on ? "bg-[#007676]" : "bg-slate-200 dark:bg-slate-600"}`}
       >
         <div
           className={`absolute top-0.5 w-4.5 h-4.5 bg-white rounded-full shadow-sm transition-all duration-200 ${on ? "left-[21px]" : "left-0.5"}`}

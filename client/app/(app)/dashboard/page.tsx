@@ -17,8 +17,6 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   ChevronRight,
-  Download,
-  Filter,
 } from "lucide-react";
 import {
   AreaChart,
@@ -33,6 +31,7 @@ import {
   Cell,
 } from "recharts";
 import Link from "next/link";
+import { useTheme } from "@/hooks/useTheme";
 
 // ─────────────────────────────────────────
 // CONSTANTS & TIMINGS
@@ -71,7 +70,6 @@ const cardVariants: Variants = {
 // SUB-COMPONENTS
 // ─────────────────────────────────────────
 
-/** Clean Brand Sparkline for Summary Cards */
 const Sparkline = ({ data, color }: { data: number[]; color: string }) => (
   <div className="h-[44px] w-full mt-2 -mb-2 -mx-1 opacity-80 group-hover:opacity-100 transition-opacity">
     <ResponsiveContainer width="100%" height="100%">
@@ -87,7 +85,7 @@ const Sparkline = ({ data, color }: { data: number[]; color: string }) => (
             x2="0"
             y2="1"
           >
-            <stop offset="0%" stopColor={color} stopOpacity={0.12} />
+            <stop offset="0%" stopColor={color} stopOpacity={0.18} />
             <stop offset="100%" stopColor={color} stopOpacity={0.0} />
           </linearGradient>
         </defs>
@@ -104,7 +102,6 @@ const Sparkline = ({ data, color }: { data: number[]; color: string }) => (
   </div>
 );
 
-/** Minimal Radial Ring Progress Indicator */
 const RingChart = ({
   pct,
   color,
@@ -129,8 +126,9 @@ const RingChart = ({
         cy={size / 2}
         r={r}
         fill="none"
-        stroke="#f1f5f9"
+        stroke="currentColor"
         strokeWidth={3}
+        className="text-slate-100 dark:text-slate-700"
       />
       <circle
         cx={size / 2}
@@ -147,12 +145,19 @@ const RingChart = ({
   );
 };
 
-/** High-Contrast Premium Glass Tooltip */
-const ChartTooltip = ({ active, payload, label }: any) => {
+const ChartTooltip = ({ active, payload, label, isDark }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border border-slate-200/60 rounded-lg px-4 py-2.5 shadow-xl text-xs font-sans">
-      <p className="font-bold text-slate-400 mb-2 uppercase tracking-wider text-[10px]">
+    <div
+      className={`rounded-lg px-4 py-2.5 shadow-xl text-xs font-sans border ${
+        isDark
+          ? "bg-slate-800 border-slate-700 text-slate-200"
+          : "bg-white border-slate-200/60 text-slate-700"
+      }`}
+    >
+      <p
+        className={`font-bold mb-2 uppercase tracking-wider text-[10px] ${isDark ? "text-slate-400" : "text-slate-400"}`}
+      >
         {label}
       </p>
       {payload.map((p: any) => (
@@ -161,10 +166,14 @@ const ChartTooltip = ({ active, payload, label }: any) => {
             className="w-2 h-2 rounded-full"
             style={{ background: p.color }}
           />
-          <span className="text-slate-500 capitalize font-medium">
+          <span
+            className={`capitalize font-medium ${isDark ? "text-slate-400" : "text-slate-500"}`}
+          >
             {p.dataKey}:
           </span>
-          <span className="font-bold text-[#0f172a] ml-auto pl-4">
+          <span
+            className={`font-bold ml-auto pl-4 ${isDark ? "text-white" : "text-[#0f172a]"}`}
+          >
             {p.dataKey === "revenue"
               ? formatCurrency(p.value)
               : p.value.toLocaleString()}
@@ -175,26 +184,27 @@ const ChartTooltip = ({ active, payload, label }: any) => {
   );
 };
 
-/** Framer Counter displays with strict style tracking */
 const Counter = ({ value }: { value: string }) => (
   <motion.span
     key={value}
     initial={{ opacity: 0, y: 4 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.25 }}
-    className="tabular-nums font-bold text-[#0f172a] tracking-tight text-2xl block"
+    className="tabular-nums font-bold text-[#0f172a] dark:text-white tracking-tight text-2xl block"
   >
     {value}
   </motion.span>
 );
 
 // ─────────────────────────────────────────
-// MAIN DASHBOARD CONSOLE
+// MAIN DASHBOARD
 // ─────────────────────────────────────────
 export default function DashboardPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeRange, setActiveRange] = useState<"3M" | "6M" | "1Y">("1Y");
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   useEffect(() => {
     api
@@ -207,8 +217,8 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <AppLayout>
-        <div className="flex items-center justify-center min-h-[75vh] bg-[#F5F5F5]">
-          <div className="inline-flex items-center justify-center w-8 h-8 border-2 border-slate-200 border-t-[#007676] rounded-full animate-spin" />
+        <div className="flex items-center justify-center min-h-[75vh] bg-[#F5F5F5] dark:bg-[#0f172a]">
+          <div className="inline-flex items-center justify-center w-8 h-8 border-2 border-slate-200 dark:border-slate-700 border-t-[#007676] rounded-full animate-spin" />
         </div>
       </AppLayout>
     );
@@ -281,7 +291,6 @@ export default function DashboardPage() {
       up: true,
       icon: TrendingUp,
       color: "#007676",
-      bg: "bg-slate-50 border-slate-200 text-slate-700",
       spark: sparks.today,
       pct: 74,
     },
@@ -293,7 +302,6 @@ export default function DashboardPage() {
       up: true,
       icon: ShoppingCart,
       color: "#007676",
-      bg: "bg-slate-50 border-slate-200 text-slate-700",
       spark: sparks.monthly,
       pct: 88,
     },
@@ -305,7 +313,6 @@ export default function DashboardPage() {
       up: true,
       icon: Users,
       color: "#64748b",
-      bg: "bg-slate-50 border-slate-200 text-slate-700",
       spark: sparks.customers,
       pct: 61,
     },
@@ -317,25 +324,28 @@ export default function DashboardPage() {
       up: false,
       icon: Package,
       color: "#64748b",
-      bg: "bg-slate-50 border-slate-200 text-slate-700",
       spark: sparks.products,
       pct: 32,
     },
   ];
 
+  // Dark mode chart axis/grid colors
+  const axisColor = isDark ? "#475569" : "#64748b";
+  const gridColor = isDark ? "#1e293b" : "#e2e8f0";
+
   return (
     <AppLayout>
-      <div className="min-h-screen bg-[#F5F5F5] text-[#334155] antialiased pb-16 font-sans">
+      <div className="min-h-screen bg-[#F5F5F5] dark:bg-[#0f172a] text-[#334155] dark:text-slate-300 antialiased pb-16 font-sans transition-colors duration-200">
         <motion.div
           className="w-full mx-auto px-4 sm:px-8 py-6 space-y-5"
           variants={containerVariants}
           initial="hidden"
           animate="show"
         >
-          {/* Top Navbar Header */}
+          {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-[#1e293b]">
+              <h1 className="text-2xl font-bold tracking-tight text-[#1e293b] dark:text-white">
                 Store Overview
               </h1>
               <p className="hidden sm:block text-xs font-medium text-slate-400 mt-0.5">
@@ -343,32 +353,40 @@ export default function DashboardPage() {
                 levels updates.
               </p>
             </div>
-            <div className="text-sm font-medium text-slate-500 flex items-center gap-2 sm:order-none">
-              <span className="hover:text-slate-800 cursor-pointer">🏠</span>
+            <div className="text-sm font-medium text-slate-500 dark:text-slate-400 flex items-center gap-2">
+              <span className="hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer">
+                🏠
+              </span>
               <span>/</span>
-              <span className="hover:text-slate-800 cursor-pointer">
+              <span className="hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer">
                 Dashboard
               </span>
               <span>/</span>
-              <span className="text-slate-600 font-semibold">Overview</span>
+              <span className="text-slate-600 dark:text-slate-300 font-semibold">
+                Overview
+              </span>
             </div>
           </div>
 
-          {/* High Visibility Stats Blocks Array */}
+          {/* Stat Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
             {statCards.map((s) => (
               <motion.div
                 key={s.label}
                 variants={cardVariants}
-                className="group bg-white border border-slate-200/60 rounded-lg p-5 shadow-sm transition-all duration-150 relative overflow-hidden"
+                className="group bg-white dark:bg-slate-800/70 border border-slate-200/60 dark:border-slate-700/60 rounded-lg p-5 shadow-sm transition-all duration-150 relative overflow-hidden"
               >
                 <div className="flex items-start justify-between mb-4">
-                  <div className="w-11 h-11 rounded-lg bg-[#eff6ff] flex items-center justify-center text-[#4f46e5] font-bold text-base shrink-0 shadow-xs">
+                  <div className="w-11 h-11 rounded-lg bg-[#eff6ff] dark:bg-slate-700 flex items-center justify-center text-[#4f46e5] font-bold text-base shrink-0 shadow-xs">
                     <s.icon className="w-5 h-5 stroke-[1.8]" />
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <span
-                      className={`flex items-center gap-0.5 text-[10px] font-bold px-3 py-1 rounded-md border ${s.up ? "text-emerald-700 bg-emerald-50 border-emerald-100" : "text-rose-700 bg-rose-50 border-rose-100"}`}
+                      className={`flex items-center gap-0.5 text-[10px] font-bold px-3 py-1 rounded-md border ${
+                        s.up
+                          ? "text-emerald-700 bg-emerald-50 border-emerald-100 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-400"
+                          : "text-rose-700 bg-rose-50 border-rose-100 dark:bg-rose-900/30 dark:border-rose-800 dark:text-rose-400"
+                      }`}
                     >
                       {s.up ? (
                         <ArrowUpRight className="w-3 h-3" />
@@ -379,7 +397,7 @@ export default function DashboardPage() {
                     </span>
                     <div className="relative flex items-center justify-center">
                       <RingChart pct={s.pct} color={s.color} />
-                      <span className="absolute text-[9px] font-bold text-slate-400">
+                      <span className="absolute text-[9px] font-bold text-slate-400 dark:text-slate-500">
                         {s.pct}%
                       </span>
                     </div>
@@ -387,11 +405,11 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="space-y-0.5">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">
                     {s.label}
                   </p>
                   <Counter value={s.value} />
-                  <p className="text-[11px] font-medium text-slate-400">
+                  <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500">
                     {s.sub}
                   </p>
                 </div>
@@ -401,23 +419,23 @@ export default function DashboardPage() {
             ))}
           </div>
 
-          {/* Core Analytical Panels Grid */}
+          {/* Charts Grid */}
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-            {/* Sales Volume Stream Chart */}
+            {/* Sales Area Chart */}
             <motion.div
               variants={cardVariants}
-              className="xl:col-span-7 bg-white rounded-2xl p-5 sm:p-7 border border-slate-200/50 shadow-[0_2px_20px_-4px_rgba(0,0,0,0.04)]"
+              className="xl:col-span-7 bg-white dark:bg-slate-800/70 rounded-2xl p-5 sm:p-7 border border-slate-200/50 dark:border-slate-700/50 shadow-[0_2px_20px_-4px_rgba(0,0,0,0.04)]"
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                 <div>
-                  <h3 className="font-bold text-lg text-slate-800 tracking-tight">
+                  <h3 className="font-bold text-lg text-slate-800 dark:text-white tracking-tight">
                     Sales Analytics
                   </h3>
-                  <p className="text-sm font-medium text-slate-500 mt-1">
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
                     Comparing revenue volume vs. cleared store orders
                   </p>
                 </div>
-                <div className="flex items-center gap-1 bg-slate-50/80 p-1.5 rounded-lg border border-slate-200/50 self-start sm:self-auto">
+                <div className="flex items-center gap-1 bg-slate-50/80 dark:bg-slate-700/50 p-1.5 rounded-lg border border-slate-200/50 dark:border-slate-600/50 self-start sm:self-auto">
                   {(["3M", "6M", "1Y"] as const).map((range) => (
                     <button
                       key={range}
@@ -425,7 +443,7 @@ export default function DashboardPage() {
                       className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all duration-200 ${
                         activeRange === range
                           ? "bg-[#007676] text-white shadow-md shadow-teal-900/10"
-                          : "bg-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+                          : "bg-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-600/50"
                       }`}
                     >
                       {range}
@@ -452,7 +470,7 @@ export default function DashboardPage() {
                           <stop
                             offset="5%"
                             stopColor="#007676"
-                            stopOpacity={0.25}
+                            stopOpacity={isDark ? 0.35 : 0.25}
                           />
                           <stop
                             offset="95%"
@@ -470,7 +488,7 @@ export default function DashboardPage() {
                           <stop
                             offset="5%"
                             stopColor="#4f46e5"
-                            stopOpacity={0.25}
+                            stopOpacity={isDark ? 0.35 : 0.25}
                           />
                           <stop
                             offset="95%"
@@ -481,7 +499,7 @@ export default function DashboardPage() {
                       </defs>
                       <CartesianGrid
                         strokeDasharray="4 4"
-                        stroke="#e2e8f0"
+                        stroke={gridColor}
                         vertical={false}
                         opacity={0.6}
                       />
@@ -489,7 +507,7 @@ export default function DashboardPage() {
                         dataKey="name"
                         tick={{
                           fontSize: 11,
-                          fill: "#64748b",
+                          fill: axisColor,
                           fontWeight: 500,
                         }}
                         axisLine={false}
@@ -500,7 +518,7 @@ export default function DashboardPage() {
                         yAxisId="rev"
                         tick={{
                           fontSize: 11,
-                          fill: "#64748b",
+                          fill: axisColor,
                           fontWeight: 500,
                         }}
                         axisLine={false}
@@ -513,7 +531,7 @@ export default function DashboardPage() {
                         orientation="right"
                         tick={{
                           fontSize: 11,
-                          fill: "#64748b",
+                          fill: axisColor,
                           fontWeight: 500,
                         }}
                         axisLine={false}
@@ -521,9 +539,11 @@ export default function DashboardPage() {
                         dx={8}
                       />
                       <Tooltip
-                        content={<ChartTooltip />}
+                        content={(props) => (
+                          <ChartTooltip {...props} isDark={isDark} />
+                        )}
                         cursor={{
-                          stroke: "#cbd5e1",
+                          stroke: isDark ? "#334155" : "#cbd5e1",
                           strokeWidth: 1.5,
                           strokeDasharray: "4 4",
                         }}
@@ -538,7 +558,7 @@ export default function DashboardPage() {
                         activeDot={{
                           r: 6,
                           fill: "#007676",
-                          stroke: "#fff",
+                          stroke: isDark ? "#1e293b" : "#fff",
                           strokeWidth: 3,
                         }}
                       />
@@ -552,15 +572,15 @@ export default function DashboardPage() {
                         activeDot={{
                           r: 6,
                           fill: "#4f46e5",
-                          stroke: "#fff",
+                          stroke: isDark ? "#1e293b" : "#fff",
                           strokeWidth: 3,
                         }}
                       />
                     </AreaChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
-                    <Activity className="w-8 h-8 mb-3 animate-pulse text-slate-300" />
+                  <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 dark:bg-slate-700/30 rounded-xl border border-dashed border-slate-200 dark:border-slate-600">
+                    <Activity className="w-8 h-8 mb-3 animate-pulse text-slate-300 dark:text-slate-600" />
                     <p className="text-sm font-medium">
                       No operational records identified
                     </p>
@@ -568,14 +588,14 @@ export default function DashboardPage() {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8 pt-6 border-t border-slate-100">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8 pt-6 border-t border-slate-100 dark:border-slate-700">
                 {[
                   {
                     label: "Total Sales",
                     val: formatCurrency(data?.summary?.monthlySales || 56265),
                     d: "+40.15%",
                     up: true,
-                    bg: "bg-teal-50/50",
+                    bg: "bg-teal-50/50 dark:bg-teal-900/20",
                   },
                   {
                     label: "Total Purchases",
@@ -584,7 +604,7 @@ export default function DashboardPage() {
                     ),
                     d: "-20.25%",
                     up: false,
-                    bg: "bg-slate-50/80",
+                    bg: "bg-slate-50/80 dark:bg-slate-700/30",
                   },
                   {
                     label: "Total Returns",
@@ -593,25 +613,25 @@ export default function DashboardPage() {
                     ),
                     d: "+18.15%",
                     up: true,
-                    bg: "bg-indigo-50/50",
+                    bg: "bg-indigo-50/50 dark:bg-indigo-900/20",
                   },
                 ].map((m) => (
                   <div
                     key={m.label}
-                    className={`${m.bg} p-4 rounded-xl border border-slate-100/80 flex flex-col justify-center`}
+                    className={`${m.bg} p-4 rounded-xl border border-slate-100/80 dark:border-slate-600/40 flex flex-col justify-center`}
                   >
-                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block truncate mb-1">
+                    <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block truncate mb-1">
                       {m.label}
                     </span>
                     <div className="flex items-end justify-between">
-                      <span className="text-lg font-bold text-slate-800 tracking-tight truncate">
+                      <span className="text-lg font-bold text-slate-800 dark:text-white tracking-tight truncate">
                         {m.val}
                       </span>
                       <span
                         className={`text-xs font-bold px-1.5 py-0.5 rounded-md ${
                           m.up
-                            ? "text-emerald-700 bg-emerald-100/50"
-                            : "text-rose-700 bg-rose-100/50"
+                            ? "text-emerald-700 bg-emerald-100/50 dark:text-emerald-400 dark:bg-emerald-900/30"
+                            : "text-rose-700 bg-rose-100/50 dark:text-rose-400 dark:bg-rose-900/30"
                         }`}
                       >
                         {m.d}
@@ -622,18 +642,18 @@ export default function DashboardPage() {
               </div>
             </motion.div>
 
-            {/* Category Performance Framework */}
+            {/* Category Breakdown */}
             <motion.div
               variants={cardVariants}
-              className="xl:col-span-5 bg-white rounded-2xl p-5 sm:p-7 border border-slate-200/50 shadow-[0_2px_20px_-4px_rgba(0,0,0,0.04)] flex flex-col justify-between"
+              className="xl:col-span-5 bg-white dark:bg-slate-800/70 rounded-2xl p-5 sm:p-7 border border-slate-200/50 dark:border-slate-700/50 shadow-[0_2px_20px_-4px_rgba(0,0,0,0.04)] flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h3 className="font-bold text-lg text-slate-800 tracking-tight">
+                    <h3 className="font-bold text-lg text-slate-800 dark:text-white tracking-tight">
                       Category Breakdown
                     </h3>
-                    <p className="text-sm font-medium text-slate-500 mt-1">
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
                       Current stock allocation records
                     </p>
                   </div>
@@ -648,14 +668,14 @@ export default function DashboardPage() {
                     >
                       <CartesianGrid
                         strokeDasharray="4 4"
-                        stroke="#f1f5f9"
+                        stroke={isDark ? "#1e293b" : "#f1f5f9"}
                         vertical={false}
                       />
                       <XAxis
                         dataKey="name"
                         tick={{
                           fontSize: 11,
-                          fill: "#64748b",
+                          fill: axisColor,
                           fontWeight: 500,
                         }}
                         axisLine={false}
@@ -665,24 +685,33 @@ export default function DashboardPage() {
                       <YAxis
                         tick={{
                           fontSize: 11,
-                          fill: "#64748b",
+                          fill: axisColor,
                           fontWeight: 500,
                         }}
                         axisLine={false}
                         tickLine={false}
                       />
                       <Tooltip
-                        cursor={{ fill: "rgba(241,245,249,0.4)" }}
+                        cursor={{
+                          fill: isDark
+                            ? "rgba(30,41,59,0.4)"
+                            : "rgba(241,245,249,0.4)",
+                        }}
                         contentStyle={{
                           borderRadius: "8px",
-                          border: "none",
-                          boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                          border: isDark ? "1px solid #334155" : "none",
+                          background: isDark ? "#1e293b" : "#fff",
+                          color: isDark ? "#e2e8f0" : "#0f172a",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                         }}
                       />
                       <Bar
                         dataKey="value"
                         radius={[4, 4, 4, 4]}
-                        background={{ fill: "#f8fafc", radius: 4 }}
+                        background={{
+                          fill: isDark ? "#1e293b" : "#f8fafc",
+                          radius: 4,
+                        }}
                       >
                         {catData.map((_, i) => (
                           <Cell
@@ -700,7 +729,9 @@ export default function DashboardPage() {
                 {catData.map((c, i) => (
                   <div key={c.name} className="space-y-1.5">
                     <div className="flex items-center justify-between text-sm font-medium">
-                      <span className="text-slate-600">{c.name}</span>
+                      <span className="text-slate-600 dark:text-slate-300">
+                        {c.name}
+                      </span>
                       <span
                         className="font-bold"
                         style={{ color: BAR_COLORS[i] }}
@@ -708,7 +739,7 @@ export default function DashboardPage() {
                         {c.value}%
                       </span>
                     </div>
-                    <div className="h-2 bg-slate-100/80 rounded-full overflow-hidden shadow-inner">
+                    <div className="h-2 bg-slate-100/80 dark:bg-slate-700 rounded-full overflow-hidden shadow-inner">
                       <motion.div
                         className="h-full rounded-full"
                         style={{ background: BAR_COLORS[i] }}
@@ -726,19 +757,20 @@ export default function DashboardPage() {
               </div>
             </motion.div>
           </div>
-          {/* Lower Section Management Blocks */}
+
+          {/* Lower Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-12 gap-5">
-            {/* AI Smart Insights Panel */}
+            {/* Smart Insights */}
             <motion.div
               variants={cardVariants}
-              className="xl:col-span-3 bg-white border border-slate-200/60 rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-[0_2px_20px_-4px_rgba(0,0,0,0.04)]"
+              className="xl:col-span-3 bg-white dark:bg-slate-800/70 border border-slate-200/60 dark:border-slate-700/50 rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-[0_2px_20px_-4px_rgba(0,0,0,0.04)]"
             >
-              <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
-                <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
-                  <Zap className="w-4 h-4 text-teal-600 fill-current" />
+              <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-slate-700">
+                <div className="w-9 h-9 rounded-xl bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center shrink-0">
+                  <Zap className="w-4 h-4 text-teal-600 dark:text-teal-400 fill-current" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-slate-800 tracking-tight">
+                  <h3 className="font-bold text-sm text-slate-800 dark:text-white tracking-tight">
                     Smart Insights
                   </h3>
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
@@ -756,15 +788,15 @@ export default function DashboardPage() {
                   .map((p: any, idx: number) => (
                     <div
                       key={idx}
-                      className="flex items-center justify-between bg-slate-50 border border-slate-100 rounded-lg px-3 py-2.5 transition-colors hover:border-teal-100"
+                      className="flex items-center justify-between bg-slate-50 dark:bg-slate-700/50 border border-slate-100 dark:border-slate-600/50 rounded-lg px-3 py-2.5 transition-colors hover:border-teal-100 dark:hover:border-teal-700"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <Star className="w-3.5 h-3.5 text-amber-400 fill-current shrink-0" />
-                        <span className="text-xs text-slate-700 font-semibold truncate">
+                        <span className="text-xs text-slate-700 dark:text-slate-200 font-semibold truncate">
                           {p.name}
                         </span>
                       </div>
-                      <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md shrink-0">
+                      <span className="text-[10px] font-bold text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/30 px-2 py-0.5 rounded-md shrink-0">
                         {p.totalSold} sold
                       </span>
                     </div>
@@ -781,7 +813,7 @@ export default function DashboardPage() {
                     .map((h: any, idx: number) => (
                       <div
                         key={idx}
-                        className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-[11px] font-semibold text-slate-600"
+                        className="flex items-center gap-2 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-[11px] font-semibold text-slate-600 dark:text-slate-300"
                       >
                         <Clock className="w-3.5 h-3.5 text-teal-500 shrink-0" />
                         {h._id}:00 – {h._id + 1}:00
@@ -791,22 +823,22 @@ export default function DashboardPage() {
               </div>
             </motion.div>
 
-            {/* Low Stock Alerts Module */}
+            {/* Low Stock Alert */}
             <motion.div
               variants={cardVariants}
-              className="xl:col-span-3 bg-white rounded-lg p-5 border border-slate-200/60 shadow-sm flex flex-col justify-between"
+              className="xl:col-span-3 bg-white dark:bg-slate-800/70 rounded-lg p-5 border border-slate-200/60 dark:border-slate-700/50 shadow-sm flex flex-col justify-between"
             >
               <div>
-                <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-slate-700">
                   <div>
-                    <h3 className="font-bold text-sm text-[#1e293b] tracking-tight">
+                    <h3 className="font-bold text-sm text-[#1e293b] dark:text-white tracking-tight">
                       Low Stock Alert
                     </h3>
                     <p className="text-xs font-medium text-slate-400 mt-0.5">
                       Items requiring logistics restock
                     </p>
                   </div>
-                  <span className="flex items-center gap-1 text-[10px] font-bold bg-rose-50 border border-rose-100 text-rose-600 px-3 py-1 rounded-md">
+                  <span className="flex items-center gap-1 text-[10px] font-bold bg-rose-50 dark:bg-rose-900/30 border border-rose-100 dark:border-rose-800 text-rose-600 dark:text-rose-400 px-3 py-1 rounded-md">
                     <span className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-ping" />
                     Alert
                   </span>
@@ -816,19 +848,19 @@ export default function DashboardPage() {
                   {data?.lowStockProducts?.map((p: any) => (
                     <div
                       key={p._id}
-                      className="flex items-center justify-between p-2 rounded-md bg-slate-50/60 border border-slate-200/40 gap-2 hover:bg-slate-50 transition-colors"
+                      className="flex items-center justify-between p-2 rounded-md bg-slate-50/60 dark:bg-slate-700/40 border border-slate-200/40 dark:border-slate-600/40 gap-2 hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors"
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <div className="w-8 h-8 rounded bg-rose-50 border border-rose-100 flex items-center justify-center shrink-0">
-                          <Package className="w-4 h-4 text-rose-500" />
+                        <div className="w-8 h-8 rounded bg-rose-50 dark:bg-rose-900/30 border border-rose-100 dark:border-rose-800 flex items-center justify-center shrink-0">
+                          <Package className="w-4 h-4 text-rose-500 dark:text-rose-400" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-xs font-bold text-slate-800 truncate">
+                          <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
                             {p.name}
                           </p>
-                          <p className="text-[11px] text-slate-400">
+                          <p className="text-[11px] text-slate-400 dark:text-slate-500">
                             Stock:{" "}
-                            <span className="text-rose-600 font-bold">
+                            <span className="text-rose-600 dark:text-rose-400 font-bold">
                               {p.stock}
                             </span>
                           </p>
@@ -845,74 +877,66 @@ export default function DashboardPage() {
               </div>
             </motion.div>
 
-            {/* Recent Invoices Ledger Table Module */}
+            {/* Recent Invoices */}
             <motion.div
               variants={cardVariants}
-              className="lg:col-span-2 xl:col-span-6 bg-white rounded-lg border border-slate-200/60 shadow-sm overflow-hidden"
+              className="lg:col-span-2 xl:col-span-6 bg-white dark:bg-slate-800/70 rounded-lg border border-slate-200/60 dark:border-slate-700/50 shadow-sm overflow-hidden"
             >
               <div className="p-4 sm:p-6 pb-4 flex items-center justify-between">
                 <div>
-                  <h3 className="font-bold text-sm text-[#1e293b] tracking-tight">
+                  <h3 className="font-bold text-sm text-[#1e293b] dark:text-white tracking-tight">
                     Recent Invoices
                   </h3>
                   <p className="text-xs font-medium text-slate-400 mt-0.5">
                     Latest business store ledger logs metrics
                   </p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Link href="/billing?tab=history">
-                    <button className="flex items-center gap-0.5 text-xs font-bold text-slate-700 hover:text-[#007676] transition-colors">
-                      View all <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                  </Link>
-                </div>
+                <Link href="/billing?tab=history">
+                  <button className="flex items-center gap-0.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-[#007676] dark:hover:text-teal-400 transition-colors">
+                    View all <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </Link>
               </div>
 
-              {/* Table Framework synchronized with Product Page Layout */}
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[500px]">
                   <thead>
-                    <tr className="border-b border-slate-100 bg-[#f8fafc]">
-                      <th className="pl-6 px-4 py-3.5 text-xs font-bold text-[#475569] uppercase tracking-wider select-none">
-                        CUSTOMER
-                      </th>
-                      <th className="px-4 py-3.5 text-xs font-bold text-[#475569] uppercase tracking-wider select-none">
-                        INVOICE
-                      </th>
-                      <th className="px-4 py-3.5 text-xs font-bold text-[#475569] uppercase tracking-wider select-none hidden sm:table-cell">
-                        DATE
-                      </th>
-                      <th className="px-4 py-3.5 text-xs font-bold text-[#475569] uppercase tracking-wider select-none text-right">
-                        AMOUNT
-                      </th>
-                      <th className="pr-6 px-4 py-3.5 text-xs font-bold text-[#475569] uppercase tracking-wider select-none text-right">
-                        STATUS
-                      </th>
+                    <tr className="border-b border-slate-100 dark:border-slate-700 bg-[#f8fafc] dark:bg-slate-700/40">
+                      {["CUSTOMER", "INVOICE", "DATE", "AMOUNT", "STATUS"].map(
+                        (h, i) => (
+                          <th
+                            key={h}
+                            className={`${i === 0 ? "pl-6" : ""} ${i === 4 ? "pr-6 text-right" : ""} ${i === 3 ? "text-right" : ""} ${i === 2 ? "hidden sm:table-cell" : ""} px-4 py-3.5 text-xs font-bold text-[#475569] dark:text-slate-400 uppercase tracking-wider select-none`}
+                          >
+                            {h}
+                          </th>
+                        ),
+                      )}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 bg-white dark:bg-transparent">
                     {data?.recentInvoices?.map((inv: any) => (
                       <tr
                         key={inv._id}
-                        className="hover:bg-slate-50/40 transition-colors group"
+                        className="hover:bg-slate-50/40 dark:hover:bg-slate-700/30 transition-colors group"
                       >
                         <td className="pl-6 px-4 py-3">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-7 h-7 rounded bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 text-[10px] font-bold shadow-inner shrink-0">
+                            <div className="w-7 h-7 rounded bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-slate-700 dark:text-slate-300 text-[10px] font-bold shadow-inner shrink-0">
                               {inv.customerName?.charAt(0) || "W"}
                             </div>
-                            <span className="text-xs font-bold text-[#0f172a] truncate max-w-[110px]">
+                            <span className="text-xs font-bold text-[#0f172a] dark:text-slate-100 truncate max-w-[110px]">
                               {inv.customerName || "Walk-in Buyer"}
                             </span>
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="text-xs font-mono font-medium text-slate-400">
+                          <span className="text-xs font-mono font-medium text-slate-400 dark:text-slate-500">
                             {inv.invoiceNumber}
                           </span>
                         </td>
                         <td className="px-4 py-3 hidden sm:table-cell">
-                          <span className="text-xs text-slate-400 font-medium">
+                          <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
                             {inv.date
                               ? new Date(inv.date).toLocaleDateString("en-US", {
                                   month: "short",
@@ -922,7 +946,7 @@ export default function DashboardPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <span className="text-xs font-bold text-[#0f172a]">
+                          <span className="text-xs font-bold text-[#0f172a] dark:text-slate-100">
                             {formatCurrency(inv.grandTotal)}
                           </span>
                         </td>
@@ -930,10 +954,10 @@ export default function DashboardPage() {
                           <span
                             className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wider inline-block border ${
                               inv.paymentStatus === "paid"
-                                ? "bg-emerald-50 border-emerald-100 text-emerald-700"
+                                ? "bg-emerald-50 border-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-400"
                                 : inv.paymentStatus === "pending"
-                                  ? "bg-amber-50 border-amber-100 text-amber-700"
-                                  : "bg-rose-50 border-rose-100 text-rose-700"
+                                  ? "bg-amber-50 border-amber-100 text-amber-700 dark:bg-amber-900/30 dark:border-amber-800 dark:text-amber-400"
+                                  : "bg-rose-50 border-rose-100 text-rose-700 dark:bg-rose-900/30 dark:border-rose-800 dark:text-rose-400"
                             }`}
                           >
                             {inv.paymentStatus}
