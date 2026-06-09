@@ -48,16 +48,16 @@ function SidebarContent({
   onClose: () => void;
 }) {
   return (
-    <div className="flex flex-col h-full w-[300px] bg-[#006666] text-white lg:rounded-tr-[25px] lg:rounded-br-[25px] pb-6 relative overflow-hidden font-sans antialiased select-none">
+    <div className="flex flex-col h-full w-[300px] bg-[#006666] dark:bg-slate-900 text-white lg:rounded-tr-[25px] lg:rounded-br-[25px] pb-6 relative overflow-hidden font-sans antialiased select-none border-r border-transparent dark:border-slate-700/50">
       {/* HEADER */}
-      <div className="flex items-center justify-between pl-7 pr-6 pt-8 pb-6 border-b border-white/[0.300] mx-2">
+      <div className="flex items-center justify-between pl-7 pr-6 pt-8 pb-6 border-b border-white/[0.300] dark:border-slate-700/60 mx-2">
         <Link
           href="/"
           className="flex items-center gap-3 group"
           onClick={onClose}
         >
           <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-400 to-amber-500 flex items-center justify-center flex-shrink-0 shadow-sm rotate-6">
-            <Layers className="w-5 h-5 text-[#006666] stroke-[2.5] -rotate-6" />
+            <Layers className="w-5 h-5 text-[#006666] dark:text-slate-900 stroke-[2.5] -rotate-6" />
           </div>
           <span className="block font-bold text-[24px] tracking-wide text-white leading-none">
             Desk<span className="text-amber-400 font-medium">Invoice</span>
@@ -65,7 +65,7 @@ function SidebarContent({
         </Link>
         <button
           onClick={onClose}
-          className="lg:hidden p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all"
+          className="lg:hidden p-2 text-white/70 hover:text-white hover:bg-white/10 dark:hover:bg-slate-700/50 rounded-xl transition-all"
         >
           <ChevronLeft className="w-6 h-6 stroke-[2.5] ml-6" />
         </button>
@@ -75,7 +75,7 @@ function SidebarContent({
       <div className="flex-1 px-5 py-7 space-y-7 overflow-y-auto custom-scrollbar">
         {navigationGroups.map((group) => (
           <div key={group.title} className="space-y-3.5">
-            <h3 className="px-3.5 text-[12px] font-bold tracking-[0.15em] text-white/50 uppercase">
+            <h3 className="px-3.5 text-[12px] font-bold tracking-[0.15em] text-white/50 dark:text-slate-500 uppercase">
               {group.title}
             </h3>
             <nav className="space-y-1.5">
@@ -89,8 +89,8 @@ function SidebarContent({
                     className={cn(
                       "flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-150 group relative text-[15px]",
                       active
-                        ? "bg-white/[0.07] text-white font-medium"
-                        : "text-white/70 hover:text-white hover:bg-white/[0.04]",
+                        ? "bg-white/[0.07] dark:bg-slate-700/60 text-white font-medium"
+                        : "text-white/70 dark:text-slate-400 hover:text-white hover:bg-white/[0.04] dark:hover:bg-slate-700/40 dark:hover:text-slate-100",
                     )}
                   >
                     {active && (
@@ -101,8 +101,8 @@ function SidebarContent({
                       className={cn(
                         "w-[18px] h-[18px] shrink-0 stroke-[2.2]",
                         active
-                          ? "text-white"
-                          : "text-white/55 group-hover:text-white",
+                          ? "text-white dark:text-slate-100"
+                          : "text-white/55 dark:text-slate-500 group-hover:text-white dark:group-hover:text-slate-200",
                       )}
                     />
 

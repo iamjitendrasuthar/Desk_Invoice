@@ -6,6 +6,7 @@ import Navbar from "@/components/layout/Navbar";
 import { useAuthStore } from "@/store/authStore";
 import NotificationToast from "../notifications/NotificationToast";
 import { ThemeContext, useThemeState } from "@/hooks/useTheme";
+import Footer from "./Footer";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { token, loadUser, logout } = useAuthStore();
@@ -34,6 +35,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <main className="flex-1 w-full max-w-full box-border">
             {children}
           </main>
+          <Footer />
         </div>
         <NotificationToast />
       </div>
