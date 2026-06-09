@@ -15,6 +15,7 @@ import NotificationBell from "@/components/notifications/NotificationBell";
 import { cn } from "@/lib/utils";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { useTheme } from "@/hooks/useTheme";
+import Link from "next/link";
 
 interface NavbarProps {
   onMenuToggle?: () => void;
@@ -91,15 +92,20 @@ export default function Navbar({ onMenuToggle, logout }: NavbarProps) {
               className="bg-white dark:bg-slate-800 p-2 rounded-2xl border border-slate-200 dark:border-slate-700 w-56 mt-2 mr-6 shadow-lg"
               sideOffset={5}
             >
-              <DropdownMenu.Item className="flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl cursor-pointer text-slate-600 dark:text-slate-300 text-sm outline-none">
-                <User className="w-4 h-4" /> My Profile
-              </DropdownMenu.Item>
-              <DropdownMenu.Item className="flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl cursor-pointer text-slate-600 dark:text-slate-300 text-sm outline-none">
-                <Mail className="w-4 h-4" /> Inbox
-              </DropdownMenu.Item>
-              <DropdownMenu.Item className="flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl cursor-pointer text-slate-600 dark:text-slate-300 text-sm outline-none">
+              <Link href="/settings">
+                <DropdownMenu.Item className="flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl cursor-pointer text-slate-600 dark:text-slate-300 text-sm outline-none">
+                  <User className="w-4 h-4" /> My Profile
+                </DropdownMenu.Item>{" "}
+              </Link>
+
+              <Link href="/notifications">
+                <DropdownMenu.Item className="flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl cursor-pointer text-slate-600 dark:text-slate-300 text-sm outline-none">
+                  <Mail className="w-4 h-4" /> Inbox
+                </DropdownMenu.Item>
+              </Link>
+              {/* <DropdownMenu.Item className="flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl cursor-pointer text-slate-600 dark:text-slate-300 text-sm outline-none">
                 <Settings className="w-4 h-4" /> Settings
-              </DropdownMenu.Item>
+              </DropdownMenu.Item> */}
               <div className="my-2 border-t border-slate-100 dark:border-slate-700" />
               <DropdownMenu.Item
                 onClick={logout}
