@@ -22,6 +22,7 @@ import {
   AlertCircle,
   ShoppingCart,
 } from "lucide-react";
+import Link from "next/link";
 
 interface Product {
   _id: string;
@@ -573,23 +574,21 @@ export default function ProductsPage() {
 
                               {/* Reorder button */}
                               {isOut ? (
-                                <a
+                                <Link
                                   href={`/suppliers?reorder=${encodeURIComponent(p.name)}`}
                                   className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wide px-2.5 py-1.5 rounded-md bg-rose-600 hover:bg-rose-700 text-white transition-colors shadow-sm"
-                                  title="Reorder stock"
                                 >
                                   <ShoppingCart className="w-3 h-3" />
                                   Reorder
-                                </a>
+                                </Link>
                               ) : (
-                                <a
+                                <Link
                                   href={`/suppliers?reorder=${encodeURIComponent(p.name)}`}
                                   className="opacity-0 group-hover:opacity-100 flex items-center gap-1 text-[10px] font-black uppercase tracking-wide px-2.5 py-1.5 rounded-md border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-teal-400 hover:text-teal-600 dark:hover:text-teal-400 transition-all"
-                                  title="Reorder stock"
                                 >
                                   <ShoppingCart className="w-3 h-3" />
                                   Reorder
-                                </a>
+                                </Link>
                               )}
 
                               <button
