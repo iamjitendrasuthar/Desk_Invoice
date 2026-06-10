@@ -2,6 +2,16 @@ const Invoice = require("../models/Invoice");
 const Product = require("../models/Product");
 const Customer = require("../models/Customer");
 const Supplier = require("../models/Supplier");
+const { scopeToTenant } = require("../utils/tenantQuery");
+const mongoose = require("mongoose");
+
+const tenantMatch = (req, extra = {}) => {
+  const filter = scopeToTenant(req, extra);
+  if (filter.tenantId) {
+    filter.tenantId = new mongoose.Types.ObjectId(filter.tenantId);
+  }
+  return filter;
+};
 
 const getDashboard = async (req, res) => {
   try {
@@ -12,21 +22,54 @@ const getDashboard = async (req, res) => {
       today.getDate(),
     );
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const startOfYear = new Date(today.getFullYear(), 0, 1);
+    const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 5, 1);
+
+    const saleBase = tenantMatch(req, { type: "sale", isActive: true });
+    const tenantFilter = scopeToTenant(req, { isActive: true });
+
+    // 1. Today's sales
+    const todaySalesAgg = await Invoice.aggregate([
+      { $match: { ...saleBase, invoiceDate: { $gte: startOfToday } } },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$grandTotal" },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // 2. Monthly sales
+    const monthlySalesAgg = await Invoice.aggregate([
+      { $match: { ...saleBase, invoiceDate: { $gte: startOfMonth } } },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$grandTotal" },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // 3. Yearly sales
+    const yearlySalesAgg = await Invoice.aggregate([
+      { $match: { ...saleBase, invoiceDate: { $gte: startOfYear } } },
+      { $group: { _id: null, total: { $sum: "$grandTotal" } } },
+    ]);
+
+    // 4. Last month sales (for trend comparison)
     const startOfLastMonth = new Date(
       today.getFullYear(),
       today.getMonth() - 1,
       1,
     );
     const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
-    const startOfYear = new Date(today.getFullYear(), 0, 1);
-
-    // 1. Sales Calculations
-    const monthlySales = await Invoice.aggregate([
+    const lastMonthSalesAgg = await Invoice.aggregate([
       {
         $match: {
-          type: "sale",
-          isActive: true,
-          invoiceDate: { $gte: startOfMonth },
+          ...saleBase,
+          invoiceDate: { $gte: startOfLastMonth, $lte: endOfLastMonth },
         },
       },
       {
@@ -38,46 +81,21 @@ const getDashboard = async (req, res) => {
       },
     ]);
 
-    const todayOrdersCount = await Invoice.countDocuments({
-      type: "sale",
-      isActive: true,
-      invoiceDate: { $gte: startOfToday },
-    });
-
-    const yearlySales = await Invoice.aggregate([
-      {
-        $match: {
-          type: "sale",
-          isActive: true,
-          invoiceDate: { $gte: startOfYear },
-        },
-      },
-      { $group: { _id: null, total: { $sum: "$grandTotal" } } },
-    ]);
-
-    // 2. Collections Counts
+    // 5. Counts
     const [totalCustomers, totalProducts, totalSuppliers, lowStockCount] =
       await Promise.all([
-        Customer.countDocuments({ isActive: true }),
-        Product.countDocuments({ isActive: true }),
-        Supplier.countDocuments({ isActive: true }),
-        // Low stock count calculation
+        Customer.countDocuments(tenantFilter),
+        Product.countDocuments(tenantFilter),
+        Supplier.countDocuments(tenantFilter),
         Product.countDocuments({
+          ...tenantFilter,
           $expr: { $lte: ["$stock", "$lowStockAlert"] },
-          isActive: true,
         }),
       ]);
 
-    // 3. REVENUE TRENDS: Monthly sales chart (last 6 months) mapped for frontend
-    const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 5, 1);
+    // 6. Monthly revenue chart (last 6 months)
     const rawMonthlyChart = await Invoice.aggregate([
-      {
-        $match: {
-          type: "sale",
-          isActive: true,
-          invoiceDate: { $gte: sixMonthsAgo },
-        },
-      },
+      { $match: { ...saleBase, invoiceDate: { $gte: sixMonthsAgo } } },
       {
         $group: {
           _id: {
@@ -91,18 +109,55 @@ const getDashboard = async (req, res) => {
       { $sort: { "_id.year": 1, "_id.month": 1 } },
     ]);
 
-    // Mapping to match frontend `monthlyRevenue` expectation
     const monthlyRevenue = rawMonthlyChart.map((m) => ({
       _id: { month: m._id.month },
       revenue: m.total,
       orders: m.count,
     }));
 
-    // 4. AI INSIGHTS: Top 5 selling products mapped for frontend
+    // 7. Category breakdown (dynamic)
+    const rawCategories = await Product.aggregate([
+      { $match: tenantMatch(req, { isActive: true }) },
+      { $group: { _id: "$category", value: { $sum: 1 } } },
+      { $match: { _id: { $ne: null } } },
+      { $sort: { value: -1 } },
+      { $limit: 6 },
+    ]);
+
+    const totalCatProducts = rawCategories.reduce((sum, c) => sum + c.value, 0);
+    const categoryBreakdown = rawCategories.map((c) => ({
+      name: c._id,
+      value:
+        totalCatProducts > 0
+          ? Math.round((c.value / totalCatProducts) * 100)
+          : 0,
+      count: c.value,
+    }));
+
+    // 8. Payment methods breakdown
+    const paymentMethodsAgg = await Invoice.aggregate([
+      { $match: saleBase },
+      {
+        $group: {
+          _id: "$paymentMethod",
+          total: { $sum: "$grandTotal" },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { total: -1 } },
+    ]);
+
+    // 9. Top selling products
     const topProducts = await Invoice.aggregate([
-      { $match: { type: "sale", isActive: true } },
+      { $match: saleBase },
       { $unwind: "$items" },
-      { $group: { _id: "$items.name", totalQty: { $sum: "$items.quantity" } } },
+      {
+        $group: {
+          _id: "$items.name",
+          totalQty: { $sum: "$items.quantity" },
+          totalRevenue: { $sum: "$items.total" },
+        },
+      },
       { $sort: { totalQty: -1 } },
       { $limit: 5 },
     ]);
@@ -110,26 +165,29 @@ const getDashboard = async (req, res) => {
     const topSellingProducts = topProducts.map((p) => ({
       name: p._id,
       totalSold: p.totalQty,
+      revenue: p.totalRevenue,
     }));
 
-    // AI INSIGHTS: Peak Sales Hours
+    // 10. Peak sales hours
     const bestSalesHours = await Invoice.aggregate([
-      { $match: { type: "sale", isActive: true } },
+      { $match: saleBase },
       { $group: { _id: { $hour: "$invoiceDate" }, count: { $sum: 1 } } },
       { $sort: { count: -1 } },
       { $limit: 3 },
     ]);
 
-    // 5. LOW STOCK ALERT: Actual product list for the bottom UI
+    // 11. Low stock products list
     const lowStockProducts = await Product.find({
+      ...tenantFilter,
       $expr: { $lte: ["$stock", "$lowStockAlert"] },
-      isActive: true,
     })
-      .select("name stock")
+      .select("name stock lowStockAlert")
       .limit(10);
 
-    // 6. Recent Invoices
-    const rawInvoices = await Invoice.find({ isActive: true })
+    // 12. Recent invoices
+    const rawInvoices = await Invoice.find(
+      scopeToTenant(req, { isActive: true }),
+    )
       .populate("customer", "name")
       .sort({ createdAt: -1 })
       .limit(5)
@@ -137,39 +195,66 @@ const getDashboard = async (req, res) => {
         "invoiceNumber grandTotal paymentStatus invoiceDate customer customerName type",
       );
 
-    // Mapping recent invoices so Walk-in vs Saved Customer name logic works seamlessly
     const recentInvoices = rawInvoices.map((inv) => ({
       _id: inv._id,
       invoiceNumber: inv.invoiceNumber,
       grandTotal: inv.grandTotal,
       paymentStatus: inv.paymentStatus,
+      invoiceDate: inv.invoiceDate,
       customerName: inv.customer
         ? inv.customer.name
         : inv.customerName || "Walk-in",
     }));
 
-    // FINAL RESPONSE BUILDUP (Exactly matching Frontend State)
+    // 13. Outstanding balance total
+    const outstandingAgg = await Invoice.aggregate([
+      {
+        $match: tenantMatch(req, {
+          isActive: true,
+          paymentStatus: { $in: ["pending", "partial"] },
+        }),
+      },
+      { $group: { _id: null, total: { $sum: "$balanceDue" } } },
+    ]);
+
+    // Trend calculations
+    const currentMonthTotal = monthlySalesAgg[0]?.total || 0;
+    const lastMonthTotal = lastMonthSalesAgg[0]?.total || 0;
+    const monthlyTrend =
+      lastMonthTotal > 0
+        ? (
+            ((currentMonthTotal - lastMonthTotal) / lastMonthTotal) *
+            100
+          ).toFixed(1)
+        : 0;
+
     res.json({
       success: true,
       data: {
         summary: {
-          monthlySales: monthlySales[0]?.total || 0,
-          yearlySales: yearlySales[0]?.total || 0,
+          todaySales: todaySalesAgg[0]?.total || 0,
+          monthlySales: currentMonthTotal,
+          yearlySales: yearlySalesAgg[0]?.total || 0,
           totalCustomers,
           totalProducts,
+          totalSuppliers,
+          outstandingBalance: outstandingAgg[0]?.total || 0,
         },
         stats: {
-          todayOrders: todayOrdersCount,
-          monthlyOrders: monthlySales[0]?.count || 0,
+          todayOrders: todaySalesAgg[0]?.count || 0,
+          monthlyOrders: monthlySalesAgg[0]?.count || 0,
+          monthlyTrend: parseFloat(monthlyTrend),
         },
-        monthlyRevenue: monthlyRevenue, // Linked to Area Chart
+        monthlyRevenue,
+        categoryBreakdown,
+        paymentMethods: paymentMethodsAgg,
         aiInsights: {
-          topSellingProducts: topSellingProducts, // Linked to Top Sellers
-          bestSalesHours: bestSalesHours, // Linked to Peak Hours
-          lowStockCount: lowStockCount, // Linked to Warning Box
+          topSellingProducts,
+          bestSalesHours,
+          lowStockCount,
         },
-        lowStockProducts: lowStockProducts, // Linked to Low Stock Alert List
-        recentInvoices: recentInvoices, // Linked to Recent Invoices List
+        lowStockProducts,
+        recentInvoices,
       },
     });
   } catch (err) {
@@ -177,13 +262,11 @@ const getDashboard = async (req, res) => {
   }
 };
 
-// @desc   Get sales report by date range
-// @route  GET /api/dashboard/report
 const getSalesReport = async (req, res) => {
   try {
     const { startDate, endDate, groupBy = "day" } = req.query;
 
-    const match = { type: "sale", isActive: true };
+    const match = tenantMatch(req, { type: "sale", isActive: true });
     if (startDate) match.invoiceDate = { $gte: new Date(startDate) };
     if (endDate)
       match.invoiceDate = { ...match.invoiceDate, $lte: new Date(endDate) };

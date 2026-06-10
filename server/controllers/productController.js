@@ -1,11 +1,12 @@
 const Product = require("../models/Product");
 const { notifyLowStock } = require("../services/notificationService");
+const { scopeToTenant } = require("../utils/tenantQuery");
 
 const getProducts = async (req, res) => {
   try {
     const { search, category, isActive, page = 1, limit = 50 } = req.query;
 
-    const filter = {};
+    const filter = scopeToTenant(req);
     if (search) {
       filter.$or = [
         { name: { $regex: search, $options: "i" } },
@@ -38,7 +39,9 @@ const getProducts = async (req, res) => {
 
 const getProduct = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findOne(
+      scopeToTenant(req, { _id: req.params.id }),
+    );
     if (!product)
       return res
         .status(404)
@@ -74,7 +77,7 @@ const createProduct = async (req, res) => {
     }
 
     if (sku) {
-      const exists = await Product.findOne({ sku });
+      const exists = await Product.findOne(scopeToTenant(req, { sku }));
       if (exists)
         return res
           .status(400)
@@ -85,6 +88,7 @@ const createProduct = async (req, res) => {
     const image = req.file ? `/uploads/${req.file.filename}` : "";
 
     const product = await Product.create({
+      tenantId: req.tenantId,
       name,
       sku,
       barcode,
@@ -100,7 +104,6 @@ const createProduct = async (req, res) => {
       image,
     });
 
-    // 🔔 Agar product create hote waqt hi stock low ho (e.g. opening stock add kiya)
     const threshold = product.lowStockAlert ?? 10;
     if (product.stock <= threshold) {
       notifyLowStock(product, threshold);
@@ -119,21 +122,19 @@ const updateProduct = async (req, res) => {
     const updates = { ...req.body };
     if (req.file) updates.image = `/uploads/${req.file.filename}`;
 
-    // Keep both gstRate and taxRate in sync
     if (updates.gstRate !== undefined) updates.taxRate = updates.gstRate;
     if (updates.taxRate !== undefined) updates.gstRate = updates.taxRate;
 
-    const product = await Product.findByIdAndUpdate(req.params.id, updates, {
-      new: true,
-      runValidators: true,
-    });
+    const product = await Product.findOneAndUpdate(
+      scopeToTenant(req, { _id: req.params.id }),
+      updates,
+      { new: true, runValidators: true },
+    );
     if (!product)
       return res
         .status(404)
         .json({ success: false, message: "Product not found" });
 
-    // 🔔 Stock manually update hua — low stock check karo
-    // Sirf tab fire karo jab stock field update hui ho
     if (updates.stock !== undefined) {
       const threshold = product.lowStockAlert ?? 10;
       if (product.stock <= threshold) {
@@ -149,8 +150,8 @@ const updateProduct = async (req, res) => {
 
 const deleteProduct = async (req, res) => {
   try {
-    const product = await Product.findByIdAndUpdate(
-      req.params.id,
+    const product = await Product.findOneAndUpdate(
+      scopeToTenant(req, { _id: req.params.id }),
       { isActive: false },
       { new: true },
     );
@@ -167,8 +168,8 @@ const deleteProduct = async (req, res) => {
 const getLowStockProducts = async (req, res) => {
   try {
     const products = await Product.find({
+      ...scopeToTenant(req, { isActive: true }),
       $expr: { $lte: ["$stock", "$lowStockAlert"] },
-      isActive: true,
     });
     res.json({ success: true, count: products.length, data: products });
   } catch (err) {
@@ -178,7 +179,10 @@ const getLowStockProducts = async (req, res) => {
 
 const getCategories = async (req, res) => {
   try {
-    const categories = await Product.distinct("category", { isActive: true });
+    const categories = await Product.distinct(
+      "category",
+      scopeToTenant(req, { isActive: true }),
+    );
     res.json({ success: true, data: categories.filter(Boolean) });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

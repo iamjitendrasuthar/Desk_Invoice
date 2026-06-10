@@ -17,6 +17,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   ChevronRight,
+  Wallet,
 } from "lucide-react";
 import {
   AreaChart,
@@ -33,9 +34,6 @@ import {
 import Link from "next/link";
 import { useTheme } from "@/hooks/useTheme";
 
-// ─────────────────────────────────────────
-// CONSTANTS & TIMINGS
-// ─────────────────────────────────────────
 const MONTHS = [
   "Jan",
   "Feb",
@@ -50,7 +48,14 @@ const MONTHS = [
   "Nov",
   "Dec",
 ];
-
+const BAR_COLORS = [
+  "#007676",
+  "#4f46e5",
+  "#10b981",
+  "#f59e0b",
+  "#64748b",
+  "#e11d48",
+];
 const springTransition = { type: "spring", stiffness: 240, damping: 26 };
 
 const containerVariants: Variants = {
@@ -65,10 +70,6 @@ const cardVariants: Variants = {
   // @ts-ignore
   show: { opacity: 1, y: 0, transition: springTransition },
 };
-
-// ─────────────────────────────────────────
-// SUB-COMPONENTS
-// ─────────────────────────────────────────
 
 const Sparkline = ({ data, color }: { data: number[]; color: string }) => (
   <div className="h-[44px] w-full mt-2 -mb-2 -mx-1 opacity-80 group-hover:opacity-100 transition-opacity">
@@ -155,9 +156,7 @@ const ChartTooltip = ({ active, payload, label, isDark }: any) => {
           : "bg-white border-slate-200/60 text-slate-700"
       }`}
     >
-      <p
-        className={`font-bold mb-2 uppercase tracking-wider text-[10px] ${isDark ? "text-slate-400" : "text-slate-400"}`}
-      >
+      <p className="font-bold mb-2 uppercase tracking-wider text-[10px] text-slate-400">
         {label}
       </p>
       {payload.map((p: any) => (
@@ -196,9 +195,6 @@ const Counter = ({ value }: { value: string }) => (
   </motion.span>
 );
 
-// ─────────────────────────────────────────
-// MAIN DASHBOARD
-// ─────────────────────────────────────────
 export default function DashboardPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -233,103 +229,73 @@ export default function DashboardPage() {
   const rangeMap = { "3M": 3, "6M": 6, "1Y": 12 };
   const chartData = allChartData.slice(-rangeMap[activeRange]);
 
-  const sparks = {
-    today: [
-      2100,
-      2800,
-      2400,
-      3500,
-      3100,
-      4200,
-      data?.summary?.todaySales || 4280,
-    ],
-    monthly: [
-      38000,
-      42000,
-      45000,
-      41000,
-      50000,
-      52000,
-      data?.summary?.monthlySales || 56265,
-    ],
-    customers: [
-      900,
-      950,
-      980,
-      1020,
-      1080,
-      1150,
-      data?.summary?.totalCustomers || 1240,
-    ],
-    products: [
-      410,
-      405,
-      400,
-      398,
-      392,
-      388,
-      data?.summary?.totalProducts || 384,
-    ],
+  // Dynamic category data from API
+  const catData = data?.categoryBreakdown?.length ? data.categoryBreakdown : [];
+
+  // Dynamic sparklines from monthly revenue
+  const buildSpark = (final: number) => {
+    const base = final * 0.6;
+    return [0.5, 0.6, 0.7, 0.65, 0.8, 0.9, 1].map((m) =>
+      Math.round(base * m + (final - base) * m),
+    );
   };
 
-  const catData = [
-    { name: "Electronics", value: 38 },
-    { name: "Grocery", value: 62 },
-    { name: "Apparel", value: 45 },
-    { name: "Home", value: 29 },
-    { name: "Beauty", value: 51 },
-  ];
-
-  const BAR_COLORS = ["#007676", "#4f46e5", "#10b981", "#f59e0b", "#64748b"];
+  const monthlyTrend = data?.stats?.monthlyTrend || 0;
 
   const statCards = [
     {
       label: "Today's Sales",
       value: formatCurrency(data?.summary?.todaySales || 0),
-      sub: `${data?.stats?.todayOrders || 0} orders received`,
-      trend: "+12.4%",
-      up: true,
+      sub: `${data?.stats?.todayOrders || 0} orders today`,
+      trend: `${data?.stats?.todayOrders > 0 ? "+" : ""}${data?.stats?.todayOrders || 0} orders`,
+      up: (data?.stats?.todayOrders || 0) > 0,
       icon: TrendingUp,
       color: "#007676",
-      spark: sparks.today,
-      pct: 74,
+      spark: buildSpark(data?.summary?.todaySales || 0),
+      pct: Math.min(
+        Math.round(
+          ((data?.summary?.todaySales || 0) /
+            Math.max(data?.summary?.monthlySales || 1, 1)) *
+            100,
+        ),
+        100,
+      ),
     },
     {
       label: "Monthly Revenue",
       value: formatCurrency(data?.summary?.monthlySales || 0),
-      sub: `${data?.stats?.monthlyOrders || 0} invoices cleared`,
-      trend: "+40.15%",
-      up: true,
+      sub: `${data?.stats?.monthlyOrders || 0} invoices this month`,
+      trend: `${monthlyTrend >= 0 ? "+" : ""}${monthlyTrend}%`,
+      up: monthlyTrend >= 0,
       icon: ShoppingCart,
       color: "#007676",
-      spark: sparks.monthly,
-      pct: 88,
+      spark: buildSpark(data?.summary?.monthlySales || 0),
+      pct: Math.min(Math.abs(monthlyTrend), 100),
     },
     {
       label: "Total Customers",
       value: (data?.summary?.totalCustomers || 0).toLocaleString(),
-      sub: "Active consumer base",
-      trend: "+8.2%",
+      sub: `${data?.summary?.totalSuppliers || 0} suppliers`,
+      trend: `${data?.summary?.totalCustomers || 0} active`,
       up: true,
       icon: Users,
       color: "#64748b",
-      spark: sparks.customers,
+      spark: buildSpark(data?.summary?.totalCustomers || 0),
       pct: 61,
     },
     {
       label: "Active Products",
       value: (data?.summary?.totalProducts || 0).toLocaleString(),
       sub: `${data?.aiInsights?.lowStockCount || 0} items low stock`,
-      trend: "-2.1%",
-      up: false,
+      trend: `${data?.aiInsights?.lowStockCount || 0} low stock`,
+      up: (data?.aiInsights?.lowStockCount || 0) === 0,
       icon: Package,
       color: "#64748b",
-      spark: sparks.products,
+      spark: buildSpark(data?.summary?.totalProducts || 0),
       pct: 32,
     },
   ];
 
-  // Dark mode chart axis/grid colors
   const axisColor = isDark ? "#475569" : "#64748b";
   const gridColor = isDark ? "#1e293b" : "#e2e8f0";
 
@@ -354,16 +320,10 @@ export default function DashboardPage() {
               </p>
             </div>
             <div className="text-sm font-medium text-slate-500 dark:text-slate-400 flex items-center gap-2">
-              <span className="hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer">
-                🏠
-              </span>
-              <span>/</span>
-              <span className="hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer">
-                Dashboard
-              </span>
+              <span>🏠</span>
               <span>/</span>
               <span className="text-slate-600 dark:text-slate-300 font-semibold">
-                Overview
+                Dashboard
               </span>
             </div>
           </div>
@@ -377,7 +337,7 @@ export default function DashboardPage() {
                 className="group bg-white dark:bg-slate-800/70 border border-slate-200/60 dark:border-slate-700/60 rounded-lg p-5 shadow-sm transition-all duration-150 relative overflow-hidden"
               >
                 <div className="flex items-start justify-between mb-4">
-                  <div className="w-11 h-11 rounded-lg bg-[#eff6ff] dark:bg-slate-700 flex items-center justify-center text-[#4f46e5] font-bold text-base shrink-0 shadow-xs">
+                  <div className="w-11 h-11 rounded-lg bg-[#eff6ff] dark:bg-slate-700 flex items-center justify-center text-[#4f46e5] font-bold shrink-0">
                     <s.icon className="w-5 h-5 stroke-[1.8]" />
                   </div>
                   <div className="flex flex-col items-end gap-2">
@@ -403,7 +363,6 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 </div>
-
                 <div className="space-y-0.5">
                   <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">
                     {s.label}
@@ -413,7 +372,6 @@ export default function DashboardPage() {
                     {s.sub}
                   </p>
                 </div>
-
                 <Sparkline data={s.spark} color={s.color} />
               </motion.div>
             ))}
@@ -432,7 +390,7 @@ export default function DashboardPage() {
                     Sales Analytics
                   </h3>
                   <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
-                    Comparing revenue volume vs. cleared store orders
+                    Revenue vs orders comparison
                   </p>
                 </div>
                 <div className="flex items-center gap-1 bg-slate-50/80 dark:bg-slate-700/50 p-1.5 rounded-lg border border-slate-200/50 dark:border-slate-600/50 self-start sm:self-auto">
@@ -442,8 +400,8 @@ export default function DashboardPage() {
                       onClick={() => setActiveRange(range)}
                       className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all duration-200 ${
                         activeRange === range
-                          ? "bg-[#007676] text-white shadow-md shadow-teal-900/10"
-                          : "bg-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-600/50"
+                          ? "bg-[#007676] text-white shadow-md"
+                          : "bg-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                       }`}
                     >
                       {range}
@@ -451,7 +409,6 @@ export default function DashboardPage() {
                   ))}
                 </div>
               </div>
-
               <div className="h-[260px] sm:h-[300px] w-full text-xs">
                 {chartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
@@ -581,38 +538,32 @@ export default function DashboardPage() {
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 dark:bg-slate-700/30 rounded-xl border border-dashed border-slate-200 dark:border-slate-600">
                     <Activity className="w-8 h-8 mb-3 animate-pulse text-slate-300 dark:text-slate-600" />
-                    <p className="text-sm font-medium">
-                      No operational records identified
-                    </p>
+                    <p className="text-sm font-medium">No sales data yet</p>
                   </div>
                 )}
               </div>
-
+              {/* Summary row */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8 pt-6 border-t border-slate-100 dark:border-slate-700">
                 {[
                   {
-                    label: "Total Sales",
-                    val: formatCurrency(data?.summary?.monthlySales || 56265),
-                    d: "+40.15%",
-                    up: true,
+                    label: "Monthly Sales",
+                    val: formatCurrency(data?.summary?.monthlySales || 0),
+                    trend: `${monthlyTrend >= 0 ? "+" : ""}${monthlyTrend}%`,
+                    up: monthlyTrend >= 0,
                     bg: "bg-teal-50/50 dark:bg-teal-900/20",
                   },
                   {
-                    label: "Total Purchases",
-                    val: formatCurrency(
-                      (data?.summary?.todaySales || 4280) * 3.5,
-                    ),
-                    d: "-20.25%",
-                    up: false,
+                    label: "Yearly Sales",
+                    val: formatCurrency(data?.summary?.yearlySales || 0),
+                    trend: "YTD",
+                    up: true,
                     bg: "bg-slate-50/80 dark:bg-slate-700/30",
                   },
                   {
-                    label: "Total Returns",
-                    val: formatCurrency(
-                      (data?.aiInsights?.lowStockCount || 5) * 800,
-                    ),
-                    d: "+18.15%",
-                    up: true,
+                    label: "Outstanding",
+                    val: formatCurrency(data?.summary?.outstandingBalance || 0),
+                    trend: "Pending",
+                    up: false,
                     bg: "bg-indigo-50/50 dark:bg-indigo-900/20",
                   },
                 ].map((m) => (
@@ -634,7 +585,7 @@ export default function DashboardPage() {
                             : "text-rose-700 bg-rose-100/50 dark:text-rose-400 dark:bg-rose-900/30"
                         }`}
                       >
-                        {m.d}
+                        {m.trend}
                       </span>
                     </div>
                   </div>
@@ -642,7 +593,7 @@ export default function DashboardPage() {
               </div>
             </motion.div>
 
-            {/* Category Breakdown */}
+            {/* Category Breakdown — fully dynamic */}
             <motion.div
               variants={cardVariants}
               className="xl:col-span-5 bg-white dark:bg-slate-800/70 rounded-2xl p-5 sm:p-7 border border-slate-200/50 dark:border-slate-700/50 shadow-[0_2px_20px_-4px_rgba(0,0,0,0.04)] flex flex-col justify-between"
@@ -654,79 +605,84 @@ export default function DashboardPage() {
                       Category Breakdown
                     </h3>
                     <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
-                      Current stock allocation records
+                      {catData.length > 0
+                        ? `${catData.length} categories · ${data?.summary?.totalProducts || 0} products`
+                        : "No products yet"}
                     </p>
                   </div>
                 </div>
-
-                <div className="h-[160px] w-full my-6 text-xs">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={catData}
-                      margin={{ top: 0, right: 0, left: -25, bottom: 0 }}
-                      barSize={16}
-                    >
-                      <CartesianGrid
-                        strokeDasharray="4 4"
-                        stroke={isDark ? "#1e293b" : "#f1f5f9"}
-                        vertical={false}
-                      />
-                      <XAxis
-                        dataKey="name"
-                        tick={{
-                          fontSize: 11,
-                          fill: axisColor,
-                          fontWeight: 500,
-                        }}
-                        axisLine={false}
-                        tickLine={false}
-                        dy={10}
-                      />
-                      <YAxis
-                        tick={{
-                          fontSize: 11,
-                          fill: axisColor,
-                          fontWeight: 500,
-                        }}
-                        axisLine={false}
-                        tickLine={false}
-                      />
-                      <Tooltip
-                        cursor={{
-                          fill: isDark
-                            ? "rgba(30,41,59,0.4)"
-                            : "rgba(241,245,249,0.4)",
-                        }}
-                        contentStyle={{
-                          borderRadius: "8px",
-                          border: isDark ? "1px solid #334155" : "none",
-                          background: isDark ? "#1e293b" : "#fff",
-                          color: isDark ? "#e2e8f0" : "#0f172a",
-                          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                        }}
-                      />
-                      <Bar
-                        dataKey="value"
-                        radius={[4, 4, 4, 4]}
-                        background={{
-                          fill: isDark ? "#1e293b" : "#f8fafc",
-                          radius: 4,
-                        }}
+                {catData.length > 0 ? (
+                  <div className="h-[160px] w-full my-6 text-xs">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={catData}
+                        margin={{ top: 0, right: 0, left: -25, bottom: 0 }}
+                        barSize={16}
                       >
-                        {catData.map((_, i) => (
-                          <Cell
-                            key={i}
-                            fill={BAR_COLORS[i % BAR_COLORS.length]}
-                          />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
+                        <CartesianGrid
+                          strokeDasharray="4 4"
+                          stroke={isDark ? "#1e293b" : "#f1f5f9"}
+                          vertical={false}
+                        />
+                        <XAxis
+                          dataKey="name"
+                          tick={{
+                            fontSize: 11,
+                            fill: axisColor,
+                            fontWeight: 500,
+                          }}
+                          axisLine={false}
+                          tickLine={false}
+                          dy={10}
+                        />
+                        <YAxis
+                          tick={{
+                            fontSize: 11,
+                            fill: axisColor,
+                            fontWeight: 500,
+                          }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <Tooltip
+                          cursor={{
+                            fill: isDark
+                              ? "rgba(30,41,59,0.4)"
+                              : "rgba(241,245,249,0.4)",
+                          }}
+                          contentStyle={{
+                            borderRadius: "8px",
+                            border: isDark ? "1px solid #334155" : "none",
+                            background: isDark ? "#1e293b" : "#fff",
+                            color: isDark ? "#e2e8f0" : "#0f172a",
+                          }}
+                        />
+                        <Bar
+                          dataKey="value"
+                          radius={[4, 4, 4, 4]}
+                          background={{
+                            fill: isDark ? "#1e293b" : "#f8fafc",
+                            radius: 4,
+                          }}
+                        >
+                          {catData.map((_: any, i: number) => (
+                            <Cell
+                              key={i}
+                              fill={BAR_COLORS[i % BAR_COLORS.length]}
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="h-[160px] flex items-center justify-center text-slate-400 text-sm">
+                    No category data
+                  </div>
+                )}
               </div>
-
               <div className="space-y-4 mt-2">
-                {catData.map((c, i) => (
+                {catData.map((c: any, i: number) => (
                   <div key={c.name} className="space-y-1.5">
                     <div className="flex items-center justify-between text-sm font-medium">
                       <span className="text-slate-600 dark:text-slate-300">
@@ -734,15 +690,20 @@ export default function DashboardPage() {
                       </span>
                       <span
                         className="font-bold"
-                        style={{ color: BAR_COLORS[i] }}
+                        style={{ color: BAR_COLORS[i % BAR_COLORS.length] }}
                       >
-                        {c.value}%
+                        {c.value}%{" "}
+                        <span className="text-slate-400 font-normal text-xs">
+                          ({c.count})
+                        </span>
                       </span>
                     </div>
                     <div className="h-2 bg-slate-100/80 dark:bg-slate-700 rounded-full overflow-hidden shadow-inner">
                       <motion.div
                         className="h-full rounded-full"
-                        style={{ background: BAR_COLORS[i] }}
+                        style={{
+                          background: BAR_COLORS[i % BAR_COLORS.length],
+                        }}
                         initial={{ width: 0 }}
                         animate={{ width: `${c.value}%` }}
                         transition={{
@@ -778,47 +739,55 @@ export default function DashboardPage() {
                   </p>
                 </div>
               </div>
-
               <div className="space-y-3 flex-1">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">
                   Top Selling Products
                 </span>
-                {data?.aiInsights?.topSellingProducts
-                  ?.slice(0, 3)
-                  .map((p: any, idx: number) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between bg-slate-50 dark:bg-slate-700/50 border border-slate-100 dark:border-slate-600/50 rounded-lg px-3 py-2.5 transition-colors hover:border-teal-100 dark:hover:border-teal-700"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <Star className="w-3.5 h-3.5 text-amber-400 fill-current shrink-0" />
-                        <span className="text-xs text-slate-700 dark:text-slate-200 font-semibold truncate">
-                          {p.name}
-                        </span>
-                      </div>
-                      <span className="text-[10px] font-bold text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/30 px-2 py-0.5 rounded-md shrink-0">
-                        {p.totalSold} sold
-                      </span>
-                    </div>
-                  ))}
-              </div>
-
-              <div className="space-y-3">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">
-                  Peak Hours Matrix
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  {data?.aiInsights?.bestSalesHours
-                    ?.slice(0, 2)
-                    .map((h: any, idx: number) => (
+                {data?.aiInsights?.topSellingProducts?.length > 0 ? (
+                  data.aiInsights.topSellingProducts
+                    .slice(0, 3)
+                    .map((p: any, idx: number) => (
                       <div
                         key={idx}
-                        className="flex items-center gap-2 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-[11px] font-semibold text-slate-600 dark:text-slate-300"
+                        className="flex items-center justify-between bg-slate-50 dark:bg-slate-700/50 border border-slate-100 dark:border-slate-600/50 rounded-lg px-3 py-2.5"
                       >
-                        <Clock className="w-3.5 h-3.5 text-teal-500 shrink-0" />
-                        {h._id}:00 – {h._id + 1}:00
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <Star className="w-3.5 h-3.5 text-amber-400 fill-current shrink-0" />
+                          <span className="text-xs text-slate-700 dark:text-slate-200 font-semibold truncate">
+                            {p.name}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/30 px-2 py-0.5 rounded-md shrink-0">
+                          {p.totalSold} sold
+                        </span>
                       </div>
-                    ))}
+                    ))
+                ) : (
+                  <p className="text-xs text-slate-400 text-center py-4">
+                    No sales data yet
+                  </p>
+                )}
+              </div>
+              <div className="space-y-3">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">
+                  Peak Hours
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {data?.aiInsights?.bestSalesHours?.length > 0 ? (
+                    data.aiInsights.bestSalesHours
+                      .slice(0, 2)
+                      .map((h: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className="flex items-center gap-2 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-[11px] font-semibold text-slate-600 dark:text-slate-300"
+                        >
+                          <Clock className="w-3.5 h-3.5 text-teal-500 shrink-0" />
+                          {h._id}:00 – {h._id + 1}:00
+                        </div>
+                      ))
+                  ) : (
+                    <p className="text-xs text-slate-400">No data yet</p>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -835,44 +804,58 @@ export default function DashboardPage() {
                       Low Stock Alert
                     </h3>
                     <p className="text-xs font-medium text-slate-400 mt-0.5">
-                      Items requiring logistics restock
+                      Items requiring restock
                     </p>
                   </div>
-                  <span className="flex items-center gap-1 text-[10px] font-bold bg-rose-50 dark:bg-rose-900/30 border border-rose-100 dark:border-rose-800 text-rose-600 dark:text-rose-400 px-3 py-1 rounded-md">
-                    <span className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-ping" />
-                    Alert
-                  </span>
+                  {(data?.aiInsights?.lowStockCount || 0) > 0 && (
+                    <span className="flex items-center gap-1 text-[10px] font-bold bg-rose-50 dark:bg-rose-900/30 border border-rose-100 dark:border-rose-800 text-rose-600 dark:text-rose-400 px-3 py-1 rounded-md">
+                      <span className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-ping" />
+                      {data.aiInsights.lowStockCount} items
+                    </span>
+                  )}
                 </div>
-
                 <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
-                  {data?.lowStockProducts?.map((p: any) => (
-                    <div
-                      key={p._id}
-                      className="flex items-center justify-between p-2 rounded-md bg-slate-50/60 dark:bg-slate-700/40 border border-slate-200/40 dark:border-slate-600/40 gap-2 hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors"
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="w-8 h-8 rounded bg-rose-50 dark:bg-rose-900/30 border border-rose-100 dark:border-rose-800 flex items-center justify-center shrink-0">
-                          <Package className="w-4 h-4 text-rose-500 dark:text-rose-400" />
+                  {data?.lowStockProducts?.length > 0 ? (
+                    data.lowStockProducts.map((p: any) => (
+                      <div
+                        key={p._id}
+                        className="flex items-center justify-between p-2 rounded-md bg-slate-50/60 dark:bg-slate-700/40 border border-slate-200/40 dark:border-slate-600/40 gap-2"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-8 h-8 rounded bg-rose-50 dark:bg-rose-900/30 border border-rose-100 dark:border-rose-800 flex items-center justify-center shrink-0">
+                            <Package className="w-4 h-4 text-rose-500 dark:text-rose-400" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
+                              {p.name}
+                            </p>
+                            <p className="text-[11px] text-slate-400">
+                              Stock:{" "}
+                              <span className="text-rose-600 dark:text-rose-400 font-bold">
+                                {p.stock}
+                              </span>
+                              {p.lowStockAlert && (
+                                <span className="text-slate-300">
+                                  {" "}
+                                  / {p.lowStockAlert} min
+                                </span>
+                              )}
+                            </p>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
-                            {p.name}
-                          </p>
-                          <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                            Stock:{" "}
-                            <span className="text-rose-600 dark:text-rose-400 font-bold">
-                              {p.stock}
-                            </span>
-                          </p>
-                        </div>
+                        <Link href="/suppliers" className="shrink-0">
+                          <button className="text-[10px] bg-[#007676] hover:bg-[#005f5f] text-white px-2.5 py-1.5 rounded font-bold transition-colors">
+                            Restock
+                          </button>
+                        </Link>
                       </div>
-                      <Link href="/suppliers" className="shrink-0">
-                        <button className="text-[10px] bg-[#007676] hover:bg-[#005f5f] text-white px-2.5 py-1.5 rounded font-bold shadow-2xs transition-colors">
-                          Restock
-                        </button>
-                      </Link>
+                    ))
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-8 text-slate-400">
+                      <Package className="w-8 h-8 mb-2 text-slate-300" />
+                      <p className="text-xs font-medium">All stocks healthy</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -888,16 +871,15 @@ export default function DashboardPage() {
                     Recent Invoices
                   </h3>
                   <p className="text-xs font-medium text-slate-400 mt-0.5">
-                    Latest business store ledger logs metrics
+                    Latest transactions
                   </p>
                 </div>
                 <Link href="/billing?tab=history">
-                  <button className="flex items-center gap-0.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-[#007676] dark:hover:text-teal-400 transition-colors">
+                  <button className="flex items-center gap-0.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-[#007676] transition-colors">
                     View all <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </Link>
               </div>
-
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[500px]">
                   <thead>
@@ -906,7 +888,7 @@ export default function DashboardPage() {
                         (h, i) => (
                           <th
                             key={h}
-                            className={`${i === 0 ? "pl-6" : ""} ${i === 4 ? "pr-6 text-right" : ""} ${i === 3 ? "text-right" : ""} ${i === 2 ? "hidden sm:table-cell" : ""} px-4 py-3.5 text-xs font-bold text-[#475569] dark:text-slate-400 uppercase tracking-wider select-none`}
+                            className={`${i === 0 ? "pl-6" : ""} ${i === 4 ? "pr-6 text-right" : ""} ${i === 3 ? "text-right" : ""} ${i === 2 ? "hidden sm:table-cell" : ""} px-4 py-3.5 text-xs font-bold text-[#475569] dark:text-slate-400 uppercase tracking-wider`}
                           >
                             {h}
                           </th>
@@ -915,56 +897,67 @@ export default function DashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 bg-white dark:bg-transparent">
-                    {data?.recentInvoices?.map((inv: any) => (
-                      <tr
-                        key={inv._id}
-                        className="hover:bg-slate-50/40 dark:hover:bg-slate-700/30 transition-colors group"
-                      >
-                        <td className="pl-6 px-4 py-3">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-7 h-7 rounded bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-slate-700 dark:text-slate-300 text-[10px] font-bold shadow-inner shrink-0">
-                              {inv.customerName?.charAt(0) || "W"}
+                    {data?.recentInvoices?.length > 0 ? (
+                      data.recentInvoices.map((inv: any) => (
+                        <tr
+                          key={inv._id}
+                          className="hover:bg-slate-50/40 dark:hover:bg-slate-700/30 transition-colors"
+                        >
+                          <td className="pl-6 px-4 py-3">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-7 h-7 rounded bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-slate-700 dark:text-slate-300 text-[10px] font-bold shrink-0">
+                                {inv.customerName?.charAt(0) || "W"}
+                              </div>
+                              <span className="text-xs font-bold text-[#0f172a] dark:text-slate-100 truncate max-w-[110px]">
+                                {inv.customerName || "Walk-in"}
+                              </span>
                             </div>
-                            <span className="text-xs font-bold text-[#0f172a] dark:text-slate-100 truncate max-w-[110px]">
-                              {inv.customerName || "Walk-in Buyer"}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-xs font-mono font-medium text-slate-400 dark:text-slate-500">
+                              {inv.invoiceNumber}
                             </span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="text-xs font-mono font-medium text-slate-400 dark:text-slate-500">
-                            {inv.invoiceNumber}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 hidden sm:table-cell">
-                          <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
-                            {inv.date
-                              ? new Date(inv.date).toLocaleDateString("en-US", {
-                                  month: "short",
-                                  day: "numeric",
-                                })
-                              : "—"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <span className="text-xs font-bold text-[#0f172a] dark:text-slate-100">
-                            {formatCurrency(inv.grandTotal)}
-                          </span>
-                        </td>
-                        <td className="pr-6 px-4 py-3 text-right">
-                          <span
-                            className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wider inline-block border ${
-                              inv.paymentStatus === "paid"
-                                ? "bg-emerald-50 border-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-400"
-                                : inv.paymentStatus === "pending"
-                                  ? "bg-amber-50 border-amber-100 text-amber-700 dark:bg-amber-900/30 dark:border-amber-800 dark:text-amber-400"
-                                  : "bg-rose-50 border-rose-100 text-rose-700 dark:bg-rose-900/30 dark:border-rose-800 dark:text-rose-400"
-                            }`}
-                          >
-                            {inv.paymentStatus}
-                          </span>
+                          </td>
+                          <td className="px-4 py-3 hidden sm:table-cell">
+                            <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
+                              {inv.invoiceDate
+                                ? new Date(inv.invoiceDate).toLocaleDateString(
+                                    "en-IN",
+                                    { month: "short", day: "numeric" },
+                                  )
+                                : "—"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <span className="text-xs font-bold text-[#0f172a] dark:text-slate-100">
+                              {formatCurrency(inv.grandTotal)}
+                            </span>
+                          </td>
+                          <td className="pr-6 px-4 py-3 text-right">
+                            <span
+                              className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wider inline-block border ${
+                                inv.paymentStatus === "paid"
+                                  ? "bg-emerald-50 border-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-400"
+                                  : inv.paymentStatus === "pending"
+                                    ? "bg-amber-50 border-amber-100 text-amber-700 dark:bg-amber-900/30 dark:border-amber-800 dark:text-amber-400"
+                                    : "bg-rose-50 border-rose-100 text-rose-700 dark:bg-rose-900/30 dark:border-rose-800 dark:text-rose-400"
+                              }`}
+                            >
+                              {inv.paymentStatus}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan={5}
+                          className="text-center py-8 text-slate-400 text-sm"
+                        >
+                          No invoices yet
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>

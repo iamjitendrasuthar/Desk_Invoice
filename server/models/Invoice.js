@@ -54,6 +54,12 @@ const invoiceSchema = new mongoose.Schema(
     notes: { type: String },
     termsAndConditions: { type: String },
     isActive: { type: Boolean, default: true },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tenant",
+      required: true,
+      index: true,
+    },
   },
   { timestamps: true },
 );

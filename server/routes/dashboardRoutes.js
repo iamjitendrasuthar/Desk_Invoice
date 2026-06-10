@@ -1,9 +1,15 @@
 const express = require("express");
 const router = express.Router();
-const { getDashboard, getSalesReport } = require("../controllers/dashboardController");
+const {
+  getDashboard,
+  getSalesReport,
+} = require("../controllers/dashboardController");
 const { protect } = require("../middleware/authMiddleware");
+const tenantContext = require("../middleware/tenantContext");
 
-router.get("/", protect, getDashboard);
-router.get("/report", protect, getSalesReport);
+router.use(protect, tenantContext);
+
+router.get("/", getDashboard);
+router.get("/report", getSalesReport);
 
 module.exports = router;

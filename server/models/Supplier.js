@@ -23,8 +23,14 @@ const supplierSchema = new mongoose.Schema(
     outstandingBalance: { type: Number, default: 0 },
     notes: { type: String },
     isActive: { type: Boolean, default: true },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tenant",
+      required: true,
+      index: true,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("Supplier", supplierSchema);

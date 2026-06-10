@@ -1,18 +1,22 @@
 const express = require("express");
 const router = express.Router();
-const { getInvoices, getInvoice, createInvoice, updateInvoice, deleteInvoice, recordPayment, downloadInvoicePDF } = require("../controllers/invoiceController");
+const {
+  getInvoices,
+  getInvoice,
+  createInvoice,
+  updateInvoice,
+  deleteInvoice,
+  recordPayment,
+  downloadInvoicePDF,
+} = require("../controllers/invoiceController");
 const { protect } = require("../middleware/authMiddleware");
+const tenantContext = require("../middleware/tenantContext");
 
-router.route("/")
-  .get(protect, getInvoices)
-  .post(protect, createInvoice);
+router.use(protect, tenantContext);
 
-router.route("/:id")
-  .get(protect, getInvoice)
-  .put(protect, updateInvoice)
-  .delete(protect, deleteInvoice);
-
-router.post("/:id/payment", protect, recordPayment);
-router.get("/:id/pdf", protect, downloadInvoicePDF);
+router.route("/").get(getInvoices).post(createInvoice);
+router.route("/:id").get(getInvoice).put(updateInvoice).delete(deleteInvoice);
+router.post("/:id/payment", recordPayment);
+router.get("/:id/pdf", downloadInvoicePDF);
 
 module.exports = router;

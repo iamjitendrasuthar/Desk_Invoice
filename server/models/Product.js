@@ -16,6 +16,12 @@ const productSchema = new mongoose.Schema(
     lowStockAlert: { type: Number, default: 10 },
     image: { type: String, default: "" },
     isActive: { type: Boolean, default: true },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tenant",
+      required: true,
+      index: true,
+    },
   },
   {
     timestamps: true,

@@ -1,4 +1,5 @@
 const Invoice = require("../models/Invoice");
+const { scopeToTenant } = require("../utils/tenantQuery");
 const Product = require("../models/Product");
 const Customer = require("../models/Customer");
 const generateInvoiceNumber = require("../utils/generateInvoiceNumber");
@@ -62,7 +63,7 @@ const getInvoices = async (req, res) => {
       limit = 50,
     } = req.query;
 
-    const filter = { isActive: true };
+    const filter = scopeToTenant(req, { isActive: true });
     if (type) filter.type = type;
     if (paymentStatus) filter.paymentStatus = paymentStatus;
     if (customer) filter.customer = customer;
@@ -120,7 +121,9 @@ const updateInvoice = async (req, res) => {
       termsAndConditions,
     } = req.body;
 
-    const invoice = await Invoice.findById(req.params.id);
+    const invoice = await Invoice.findOne(
+      scopeToTenant(req, { _id: req.params.id }),
+    );
     if (!invoice)
       return res
         .status(404)
@@ -154,8 +157,8 @@ const updateInvoice = async (req, res) => {
 // @route  DELETE /api/invoices/:id
 const deleteInvoice = async (req, res) => {
   try {
-    const invoice = await Invoice.findByIdAndUpdate(
-      req.params.id,
+    const invoice = await Invoice.findOneAndUpdate(
+      scopeToTenant(req, { _id: req.params.id }),
       { isActive: false },
       { new: true },
     );
@@ -233,6 +236,7 @@ const createInvoice = async (req, res) => {
     const invoice = await Invoice.create({
       invoiceNumber,
       type,
+      tenantId: req.tenantId,
       customer,
       customerName,
       customerPhone,

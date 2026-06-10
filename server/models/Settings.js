@@ -2,6 +2,13 @@ const mongoose = require("mongoose");
 
 const settingsSchema = new mongoose.Schema(
   {
+    // IMPORTANT: Ab settings per-tenant hain
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tenant",
+      required: true,
+      unique: true, // ek tenant ki sirf ek settings document
+    },
     businessName: { type: String, default: "" },
     businessEmail: { type: String, default: "" },
     businessPhone: { type: String, default: "" },
@@ -15,10 +22,10 @@ const settingsSchema = new mongoose.Schema(
     gstin: { type: String, default: "" },
     panNumber: { type: String, default: "" },
     logo: { type: String, default: "" },
-    currency: { type: String, default: "" },
-    currencySymbol: { type: String, default: "" },
-    invoicePrefix: { type: String, default: "" },
-    invoiceCounter: { type: Number, default: 1 }, // keep counter as 1, it's functional not display
+    currency: { type: String, default: "INR" },
+    currencySymbol: { type: String, default: "₹" },
+    invoicePrefix: { type: String, default: "INV" },
+    invoiceCounter: { type: Number, default: 1 },
     defaultTaxRate: { type: Number, default: null },
     termsAndConditions: { type: String, default: "" },
     bankDetails: {

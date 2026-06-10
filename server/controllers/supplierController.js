@@ -1,4 +1,5 @@
 const Supplier = require("../models/Supplier");
+const { scopeToTenant } = require("../utils/tenantQuery");
 
 // @desc   Get all suppliers
 // @route  GET /api/suppliers
@@ -6,7 +7,7 @@ const getSuppliers = async (req, res) => {
   try {
     const { search, page = 1, limit = 50 } = req.query;
 
-    const filter = { isActive: true };
+    const filter = scopeToTenant(req, { isActive: true });
     if (search) {
       filter.$or = [
         { name: { $regex: search, $options: "i" } },
@@ -17,9 +18,17 @@ const getSuppliers = async (req, res) => {
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const total = await Supplier.countDocuments(filter);
-    const suppliers = await Supplier.find(filter).skip(skip).limit(parseInt(limit)).sort({ name: 1 });
+    const suppliers = await Supplier.find(filter)
+      .skip(skip)
+      .limit(parseInt(limit))
+      .sort({ name: 1 });
 
-    res.json({ success: true, count: suppliers.length, total, data: suppliers });
+    res.json({
+      success: true,
+      count: suppliers.length,
+      total,
+      data: suppliers,
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -29,8 +38,13 @@ const getSuppliers = async (req, res) => {
 // @route  GET /api/suppliers/:id
 const getSupplier = async (req, res) => {
   try {
-    const supplier = await Supplier.findById(req.params.id);
-    if (!supplier) return res.status(404).json({ success: false, message: "Supplier not found" });
+    const supplier = await Supplier.findOne(
+      scopeToTenant(req, { _id: req.params.id }),
+    );
+    if (!supplier)
+      return res
+        .status(404)
+        .json({ success: false, message: "Supplier not found" });
     res.json({ success: true, data: supplier });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -41,12 +55,36 @@ const getSupplier = async (req, res) => {
 // @route  POST /api/suppliers
 const createSupplier = async (req, res) => {
   try {
-    const { name, email, phone, address, gstin, panNumber, bankDetails, notes } = req.body;
+    const {
+      name,
+      email,
+      phone,
+      address,
+      gstin,
+      panNumber,
+      bankDetails,
+      notes,
+    } = req.body;
 
-    if (!name) return res.status(400).json({ success: false, message: "Supplier name is required" });
+    if (!name)
+      return res
+        .status(400)
+        .json({ success: false, message: "Supplier name is required" });
 
-    const supplier = await Supplier.create({ name, email, phone, address, gstin, panNumber, bankDetails, notes });
-    res.status(201).json({ success: true, message: "Supplier created", data: supplier });
+    const supplier = await Supplier.create({
+      tenantId: req.tenantId,
+      name,
+      email,
+      phone,
+      address,
+      gstin,
+      panNumber,
+      bankDetails,
+      notes,
+    });
+    res
+      .status(201)
+      .json({ success: true, message: "Supplier created", data: supplier });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -56,8 +94,15 @@ const createSupplier = async (req, res) => {
 // @route  PUT /api/suppliers/:id
 const updateSupplier = async (req, res) => {
   try {
-    const supplier = await Supplier.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-    if (!supplier) return res.status(404).json({ success: false, message: "Supplier not found" });
+    const supplier = await Supplier.findOneAndUpdate(
+      scopeToTenant(req, { _id: req.params.id }),
+      req.body,
+      { new: true, runValidators: true },
+    );
+    if (!supplier)
+      return res
+        .status(404)
+        .json({ success: false, message: "Supplier not found" });
     res.json({ success: true, message: "Supplier updated", data: supplier });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -68,12 +113,25 @@ const updateSupplier = async (req, res) => {
 // @route  DELETE /api/suppliers/:id
 const deleteSupplier = async (req, res) => {
   try {
-    const supplier = await Supplier.findByIdAndUpdate(req.params.id, { isActive: false }, { new: true });
-    if (!supplier) return res.status(404).json({ success: false, message: "Supplier not found" });
+    const supplier = await Supplier.findOneAndUpdate(
+      scopeToTenant(req, { _id: req.params.id }),
+      { isActive: false },
+      { new: true },
+    );
+    if (!supplier)
+      return res
+        .status(404)
+        .json({ success: false, message: "Supplier not found" });
     res.json({ success: true, message: "Supplier deleted" });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
-module.exports = { getSuppliers, getSupplier, createSupplier, updateSupplier, deleteSupplier };
+module.exports = {
+  getSuppliers,
+  getSupplier,
+  createSupplier,
+  updateSupplier,
+  deleteSupplier,
+};

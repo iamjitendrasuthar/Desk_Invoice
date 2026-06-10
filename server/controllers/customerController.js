@@ -1,5 +1,6 @@
 const Customer = require("../models/Customer");
 const { notifyCustomerAdded } = require("../services/notificationService");
+const { scopeToTenant } = require("../utils/tenantQuery");
 
 // @desc   Get all customers (with order count and total spent)
 // @route  GET /api/customers
@@ -7,7 +8,12 @@ const getCustomers = async (req, res) => {
   try {
     const { search, page = 1, limit = 50 } = req.query;
 
-    const filter = { isActive: true };
+    const filter = scopeToTenant(req, { isActive: true });
+    // aggregate ke liye tenantId ObjectId mein convert karo
+    if (filter.tenantId) {
+      const mongoose = require("mongoose");
+      filter.tenantId = new mongoose.Types.ObjectId(filter.tenantId);
+    }
     if (search) {
       filter.$or = [
         { name: { $regex: search, $options: "i" } },
@@ -57,7 +63,9 @@ const getCustomers = async (req, res) => {
 // @route  GET /api/customers/:id
 const getCustomer = async (req, res) => {
   try {
-    const customer = await Customer.findById(req.params.id);
+    const customer = await Customer.findOne(
+      scopeToTenant(req, { _id: req.params.id }),
+    );
     if (!customer)
       return res
         .status(404)
@@ -89,6 +97,7 @@ const createCustomer = async (req, res) => {
         .json({ success: false, message: "Customer name is required" });
 
     const customer = await Customer.create({
+      tenantId: req.tenantId,
       name,
       email,
       phone,
@@ -114,10 +123,14 @@ const createCustomer = async (req, res) => {
 // @route  PUT /api/customers/:id
 const updateCustomer = async (req, res) => {
   try {
-    const customer = await Customer.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
+    const customer = await Customer.findOneAndUpdate(
+      scopeToTenant(req, { _id: req.params.id }),
+      req.body,
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
     if (!customer)
       return res
         .status(404)
@@ -132,8 +145,8 @@ const updateCustomer = async (req, res) => {
 // @route  DELETE /api/customers/:id
 const deleteCustomer = async (req, res) => {
   try {
-    const customer = await Customer.findByIdAndUpdate(
-      req.params.id,
+    const customer = await Customer.findOneAndUpdate(
+      scopeToTenant(req, { _id: req.params.id }),
       { isActive: false },
       { new: true },
     );

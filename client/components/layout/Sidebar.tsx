@@ -10,10 +10,11 @@ import {
   BarChart3,
   Settings,
   Truck,
-  ChevronRight,
-  Layers,
   ChevronLeft,
+  Layers,
+  Crown,
 } from "lucide-react";
+import { useAuthStore } from "@/store/authStore";
 
 const navigationGroups = [
   {
@@ -47,6 +48,8 @@ function SidebarContent({
   pathname: string;
   onClose: () => void;
 }) {
+  const { isSuperAdmin } = useAuthStore();
+
   return (
     <div className="flex flex-col h-full w-[300px] bg-[#006666] dark:bg-slate-900 text-white lg:rounded-tr-[25px] lg:rounded-br-[25px] pb-6 relative overflow-hidden font-sans antialiased select-none border-r border-transparent dark:border-slate-700/50">
       {/* HEADER */}
@@ -73,6 +76,7 @@ function SidebarContent({
 
       {/* NAV */}
       <div className="flex-1 px-5 py-7 space-y-7 overflow-y-auto custom-scrollbar">
+        {/* Regular nav groups */}
         {navigationGroups.map((group) => (
           <div key={group.title} className="space-y-3.5">
             <h3 className="px-3.5 text-[12px] font-bold tracking-[0.15em] text-white/50 dark:text-slate-500 uppercase">
@@ -96,7 +100,6 @@ function SidebarContent({
                     {active && (
                       <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[55%] bg-amber-400 rounded-r-full" />
                     )}
-
                     <Icon
                       className={cn(
                         "w-[18px] h-[18px] shrink-0 stroke-[2.2]",
@@ -105,11 +108,9 @@ function SidebarContent({
                           : "text-white/55 dark:text-slate-500 group-hover:text-white dark:group-hover:text-slate-200",
                       )}
                     />
-
                     <span className="flex-1 tracking-wide font-medium text-[14.5px]">
                       {label}
                     </span>
-
                     {active && (
                       <span className="text-[11px] font-semibold bg-amber-400/15 text-amber-400 px-2 py-0.5 rounded-full">
                         Active
@@ -121,6 +122,57 @@ function SidebarContent({
             </nav>
           </div>
         ))}
+
+        {/* PLATFORM section — sirf superadmin ko dikhega */}
+        {isSuperAdmin() && (
+          <div className="space-y-3.5">
+            {/* Divider */}
+            <div className="mx-3 border-t border-amber-400/20" />
+            <h3 className="px-3.5 text-[12px] font-bold tracking-[0.15em] text-amber-400/70 uppercase">
+              Platform
+            </h3>
+            <nav className="space-y-1.5">
+              {[{ href: "/dashboard/superadmin", label: "Platform Admin" }].map(
+                ({ href, label }) => {
+                  const active = pathname.startsWith(href);
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={onClose}
+                      className={cn(
+                        "flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-150 group relative text-[15px]",
+                        active
+                          ? "bg-amber-400/10 text-amber-400 font-medium"
+                          : "text-amber-400/55 hover:text-amber-400 hover:bg-amber-400/[0.06]",
+                      )}
+                    >
+                      {active && (
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[55%] bg-amber-400 rounded-r-full" />
+                      )}
+                      <Crown
+                        className={cn(
+                          "w-[18px] h-[18px] shrink-0 stroke-[2.2]",
+                          active
+                            ? "text-amber-400"
+                            : "text-amber-400/50 group-hover:text-amber-400",
+                        )}
+                      />
+                      <span className="flex-1 tracking-wide font-medium text-[14.5px]">
+                        {label}
+                      </span>
+                      {active && (
+                        <span className="text-[11px] font-semibold bg-amber-400/15 text-amber-400 px-2 py-0.5 rounded-full">
+                          Active
+                        </span>
+                      )}
+                    </Link>
+                  );
+                },
+              )}
+            </nav>
+          </div>
+        )}
       </div>
     </div>
   );

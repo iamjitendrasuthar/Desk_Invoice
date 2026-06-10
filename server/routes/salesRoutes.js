@@ -1,10 +1,11 @@
-// E:\billing-software\server\routes\salesRoutes.js
-
 const express = require("express");
 const router = express.Router();
 const { getSalesReport } = require("../controllers/salesController");
+const { protect } = require("../middleware/authMiddleware");
+const tenantContext = require("../middleware/tenantContext");
 
-// GET /api/sales/report
+router.use(protect, tenantContext);
+
 router.get("/report", getSalesReport);
 
 module.exports = router;
