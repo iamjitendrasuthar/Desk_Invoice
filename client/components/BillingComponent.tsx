@@ -442,31 +442,61 @@ export default function BillingPage() {
                       />
                       {products.length > 0 && (
                         <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg z-30 overflow-hidden">
-                          {products.map((p) => (
-                            <button
-                              key={p._id}
-                              onClick={() => addItem(p)}
-                              className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 text-left border-b border-slate-100 dark:border-slate-700 last:border-0 group transition-colors"
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="w-7 h-7 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded flex items-center justify-center text-slate-400 group-hover:bg-[#007676] group-hover:text-white transition-colors">
-                                  <Plus className="w-3.5 h-3.5" />
+                          {products.map((p) => {
+                            const isOut = (p.stock ?? 0) <= 0;
+                            return (
+                              <button
+                                key={p._id}
+                                onClick={() => !isOut && addItem(p)}
+                                disabled={isOut}
+                                className={`w-full flex items-center justify-between px-4 py-2.5 text-left border-b border-slate-100 dark:border-slate-700 last:border-0 group transition-colors ${
+                                  isOut
+                                    ? "opacity-50 cursor-not-allowed bg-slate-50/60 dark:bg-slate-800/40"
+                                    : "hover:bg-slate-50 dark:hover:bg-slate-700"
+                                }`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div
+                                    className={`w-7 h-7 border rounded flex items-center justify-center transition-colors ${
+                                      isOut
+                                        ? "bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-300"
+                                        : "bg-slate-50 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-400 group-hover:bg-[#007676] group-hover:text-white"
+                                    }`}
+                                  >
+                                    {isOut ? (
+                                      <Package className="w-3.5 h-3.5" />
+                                    ) : (
+                                      <Plus className="w-3.5 h-3.5" />
+                                    )}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                                      {p.name}
+                                    </p>
+                                    <p
+                                      className={`text-[10px] font-semibold ${isOut ? "text-rose-400 dark:text-rose-500" : "text-slate-400 dark:text-slate-500"}`}
+                                    >
+                                      {isOut
+                                        ? "Out of Stock"
+                                        : `Stock: ${p.stock} ${p.unit || "pcs"}`}
+                                    </p>
+                                  </div>
                                 </div>
-                                <div className="min-w-0">
-                                  <p className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
-                                    {p.name}
+                                <div className="flex flex-col items-end gap-1 shrink-0">
+                                  <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                                    {formatCurrency(
+                                      p.sellingPrice || p.price || 0,
+                                    )}
                                   </p>
-                                  <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
-                                    Stock Available: {p.stock || 0}{" "}
-                                    {p.unit || "pcs"}
-                                  </p>
+                                  {isOut && (
+                                    <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-900/40 text-rose-500 dark:text-rose-400 border border-rose-200 dark:border-rose-800">
+                                      Unavailable
+                                    </span>
+                                  )}
                                 </div>
-                              </div>
-                              <p className="text-xs font-bold text-slate-900 dark:text-slate-100 shrink-0">
-                                {formatCurrency(p.sellingPrice || p.price || 0)}
-                              </p>
-                            </button>
-                          ))}
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
                     </div>

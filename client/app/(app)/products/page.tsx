@@ -20,6 +20,7 @@ import {
   ChevronLeft,
   ChevronRight,
   AlertCircle,
+  ShoppingCart,
 } from "lucide-react";
 
 interface Product {
@@ -129,9 +130,7 @@ export default function ProductsPage() {
     } catch (e: any) {
       setProducts([]);
       setTotal(0);
-      setGlobalError(
-        e.response?.data?.message || "Failed to fetch inventory matrix data.",
-      );
+      setGlobalError(e.response?.data?.message || "Failed to fetch products.");
     } finally {
       setLoading(false);
     }
@@ -419,7 +418,7 @@ export default function ProductsPage() {
 
             {/* Table */}
             <div className="overflow-x-auto -mx-4 sm:mx-6">
-              <table className="w-full text-left border-collapse min-w-[1000px]">
+              <table className="w-full text-left border-collapse min-w-[1080px]">
                 <thead>
                   <tr className="border-b border-slate-100 dark:border-slate-700 bg-[#f8fafc] dark:bg-slate-700/40">
                     {[
@@ -433,7 +432,7 @@ export default function ProductsPage() {
                     ].map((h, i) => (
                       <th
                         key={h}
-                        className={`${i === 0 ? "pl-6 w-1/3" : ""} ${i === 6 ? "pr-6 text-center w-32" : ""} ${i > 0 && i < 6 ? "text-center" : ""} px-4 py-4 text-xs font-bold text-[#475569] dark:text-slate-400 uppercase tracking-wider select-none`}
+                        className={`${i === 0 ? "pl-6 w-1/3" : ""} ${i === 6 ? "pr-6 text-center w-40" : ""} ${i > 0 && i < 6 ? "text-center" : ""} px-4 py-4 text-xs font-bold text-[#475569] dark:text-slate-400 uppercase tracking-wider select-none`}
                       >
                         {h}
                       </th>
@@ -459,80 +458,152 @@ export default function ProductsPage() {
                       </td>
                     </tr>
                   ) : (
-                    products.map((p) => (
-                      <tr
-                        key={p._id}
-                        className="hover:bg-slate-50/40 dark:hover:bg-slate-700/30 transition-colors duration-100 group"
-                      >
-                        <td className="pl-6 px-4 py-5">
-                          <div className="flex items-center gap-3.5">
-                            <div className="w-11 h-11 rounded-lg bg-[#eff6ff] dark:bg-slate-700 flex items-center justify-center font-bold text-base shrink-0 shadow-xs">
-                              <Boxes className="w-5 h-5 text-[#4f46e5] dark:text-indigo-400" />
+                    products.map((p) => {
+                      const isOut = p.stock <= 0;
+                      return (
+                        <tr
+                          key={p._id}
+                          className={`transition-colors duration-100 group ${
+                            isOut
+                              ? "bg-rose-50/40 dark:bg-rose-900/5 hover:bg-rose-50/70 dark:hover:bg-rose-900/10"
+                              : "hover:bg-slate-50/40 dark:hover:bg-slate-700/30"
+                          }`}
+                        >
+                          {/* Product Details */}
+                          <td className="pl-6 px-4 py-5">
+                            <div className="flex items-center gap-3.5">
+                              <div
+                                className={`w-11 h-11 rounded-lg flex items-center justify-center font-bold text-base shrink-0 shadow-xs ${
+                                  isOut
+                                    ? "bg-rose-50 dark:bg-rose-900/30 border border-rose-100 dark:border-rose-800"
+                                    : "bg-[#eff6ff] dark:bg-slate-700"
+                                }`}
+                              >
+                                <Boxes
+                                  className={`w-5 h-5 ${isOut ? "text-rose-400 dark:text-rose-500" : "text-[#4f46e5] dark:text-indigo-400"}`}
+                                />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-bold text-sm text-[#0f172a] dark:text-slate-100 tracking-wide truncate max-w-[200px] sm:max-w-none">
+                                  {p.name}
+                                </p>
+                                {p.sku && (
+                                  <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500 block mt-0.5">
+                                    SKU: {p.sku.toUpperCase()}
+                                  </span>
+                                )}
+                                {/* Out of stock tag */}
+                                {isOut && (
+                                  <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-900/40 text-rose-500 border border-rose-200 dark:border-rose-700 mt-1">
+                                    <span className="relative flex h-1.5 w-1.5">
+                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-rose-500" />
+                                    </span>
+                                    Out of Stock
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                            <div className="min-w-0">
-                              <p className="font-bold text-sm text-[#0f172a] dark:text-slate-100 tracking-wide truncate max-w-[200px] sm:max-w-none">
-                                {p.name}
-                              </p>
-                              {p.sku && (
-                                <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500 block mt-0.5">
-                                  SKU: {p.sku.toUpperCase()}
+                          </td>
+
+                          {/* Category */}
+                          <td className="px-4 py-5 text-center">
+                            <span className="inline-block text-[11px] font-bold uppercase tracking-wider text-[#334155] dark:text-slate-300 bg-[#f1f5f9] dark:bg-slate-700 border border-slate-200 dark:border-slate-600 px-3 py-1 rounded-md min-w-[80px]">
+                              {p.category || "GENERAL"}
+                            </span>
+                          </td>
+
+                          {/* Purchase Cost */}
+                          <td className="px-4 py-5 text-center text-sm font-medium text-slate-500 dark:text-slate-400">
+                            {formatCurrency(p.purchasePrice)}
+                          </td>
+
+                          {/* Selling Price */}
+                          <td className="px-4 py-5 text-center">
+                            <span className="inline-block text-sm font-bold text-[#0f172a] dark:text-slate-100 bg-[#f8fafc] dark:bg-slate-700 border border-slate-100 dark:border-slate-600 px-3 py-1.5 rounded-lg shadow-2xs">
+                              {formatCurrency(p.sellingPrice)}
+                            </span>
+                          </td>
+
+                          {/* GST */}
+                          <td className="px-4 py-5 text-center text-sm font-semibold text-[#475569] dark:text-slate-400">
+                            {p.gstRate ?? 0}%
+                          </td>
+
+                          {/* Stock */}
+                          <td className="px-4 py-5 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <span
+                                className={`text-sm font-bold ${
+                                  isOut
+                                    ? "text-rose-600 dark:text-rose-400 font-black"
+                                    : p.isLowStock
+                                      ? "text-amber-600 dark:text-amber-400 font-black"
+                                      : "text-slate-800 dark:text-slate-200"
+                                }`}
+                              >
+                                {p.stock}{" "}
+                                <span className="text-[11px] text-slate-400 font-normal lowercase">
+                                  {p.unit}
+                                </span>
+                              </span>
+                              {(p.isLowStock || isOut) && (
+                                <span className="relative flex h-2 w-2 shrink-0">
+                                  <span
+                                    className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isOut ? "bg-rose-400" : "bg-amber-400"}`}
+                                  />
+                                  <span
+                                    className={`relative inline-flex rounded-full h-2 w-2 ${isOut ? "bg-rose-500" : "bg-amber-500"}`}
+                                  />
                                 </span>
                               )}
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-5 text-center">
-                          <span className="inline-block text-[11px] font-bold uppercase tracking-wider text-[#334155] dark:text-slate-300 bg-[#f1f5f9] dark:bg-slate-700 border border-slate-200 dark:border-slate-600 px-3 py-1 rounded-md min-w-[80px]">
-                            {p.category || "GENERAL"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-5 text-center text-sm font-medium text-slate-500 dark:text-slate-400">
-                          {formatCurrency(p.purchasePrice)}
-                        </td>
-                        <td className="px-4 py-5 text-center">
-                          <span className="inline-block text-sm font-bold text-[#0f172a] dark:text-slate-100 bg-[#f8fafc] dark:bg-slate-700 border border-slate-100 dark:border-slate-600 px-3 py-1.5 rounded-lg shadow-2xs">
-                            {formatCurrency(p.sellingPrice)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-5 text-center text-sm font-semibold text-[#475569] dark:text-slate-400">
-                          {p.gstRate ?? 0}%
-                        </td>
-                        <td className="px-4 py-5 text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <span
-                              className={`text-sm font-bold ${p.isLowStock ? "text-rose-600 dark:text-rose-400 font-black" : "text-slate-800 dark:text-slate-200"}`}
-                            >
-                              {p.stock}{" "}
-                              <span className="text-[11px] text-slate-400 font-normal lowercase">
-                                {p.unit}
-                              </span>
-                            </span>
-                            {p.isLowStock && (
-                              <span className="relative flex h-2 w-2 shrink-0">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="pr-6 px-4 py-5 text-center">
-                          <div className="flex items-center justify-center gap-4">
-                            <button
-                              onClick={() => openEdit(p)}
-                              className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors p-1"
-                            >
-                              <Edit2 className="w-4 h-4 stroke-[1.8]" />
-                            </button>
-                            <button
-                              onClick={() => triggerDelete(p._id)}
-                              className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors p-1"
-                            >
-                              <Trash2 className="w-4 h-4 stroke-[1.8]" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
+                          </td>
+
+                          {/* Actions */}
+                          <td className="pr-6 px-4 py-5 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                onClick={() => openEdit(p)}
+                                className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors p-1"
+                                title="Edit product"
+                              >
+                                <Edit2 className="w-4 h-4 stroke-[1.8]" />
+                              </button>
+
+                              {/* Reorder button */}
+                              {isOut ? (
+                                <a
+                                  href={`/suppliers?reorder=${encodeURIComponent(p.name)}`}
+                                  className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wide px-2.5 py-1.5 rounded-md bg-rose-600 hover:bg-rose-700 text-white transition-colors shadow-sm"
+                                  title="Reorder stock"
+                                >
+                                  <ShoppingCart className="w-3 h-3" />
+                                  Reorder
+                                </a>
+                              ) : (
+                                <a
+                                  href={`/suppliers?reorder=${encodeURIComponent(p.name)}`}
+                                  className="opacity-0 group-hover:opacity-100 flex items-center gap-1 text-[10px] font-black uppercase tracking-wide px-2.5 py-1.5 rounded-md border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-teal-400 hover:text-teal-600 dark:hover:text-teal-400 transition-all"
+                                  title="Reorder stock"
+                                >
+                                  <ShoppingCart className="w-3 h-3" />
+                                  Reorder
+                                </a>
+                              )}
+
+                              <button
+                                onClick={() => triggerDelete(p._id)}
+                                className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors p-1"
+                                title="Delete product"
+                              >
+                                <Trash2 className="w-4 h-4 stroke-[1.8]" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -565,7 +636,11 @@ export default function ProductsPage() {
                         <button
                           key={p}
                           onClick={() => setPage(p as number)}
-                          className={`px-3 py-1 text-sm font-bold border rounded-md transition-all shrink-0 ${page === p ? "bg-[#007676] text-white border-[#007676]" : "bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600"}`}
+                          className={`px-3 py-1 text-sm font-bold border rounded-md transition-all shrink-0 ${
+                            page === p
+                              ? "bg-[#007676] text-white border-[#007676]"
+                              : "bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600"
+                          }`}
                         >
                           {p}
                         </button>
@@ -737,11 +812,15 @@ export default function ProductsPage() {
                       </label>
                       <input
                         type="number"
+                        min={0}
                         value={form.purchasePrice}
                         onChange={(e) =>
                           setForm((p) => ({
                             ...p,
-                            purchasePrice: parseFloat(e.target.value) || 0,
+                            purchasePrice: Math.max(
+                              0,
+                              parseFloat(e.target.value) || 0,
+                            ),
                           }))
                         }
                         className={inputClass}
@@ -753,11 +832,15 @@ export default function ProductsPage() {
                       </label>
                       <input
                         type="number"
+                        min={0}
                         value={form.sellingPrice}
                         onChange={(e) => {
                           setForm((p) => ({
                             ...p,
-                            sellingPrice: parseFloat(e.target.value) || 0,
+                            sellingPrice: Math.max(
+                              0,
+                              parseFloat(e.target.value) || 0,
+                            ),
                           }));
                           if (errors.sellingPrice)
                             setErrors((prev) => ({
@@ -802,13 +885,15 @@ export default function ProductsPage() {
                       <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">
                         Stock Vol
                       </label>
+                      {/* ✅ min=0 aur Math.max(0, ...) — negative stock prevent */}
                       <input
                         type="number"
+                        min={0}
                         value={form.stock}
                         onChange={(e) =>
                           setForm((p) => ({
                             ...p,
-                            stock: parseFloat(e.target.value) || 0,
+                            stock: Math.max(0, parseFloat(e.target.value) || 0),
                           }))
                         }
                         className={inputClass}
@@ -820,11 +905,15 @@ export default function ProductsPage() {
                       </label>
                       <input
                         type="number"
+                        min={0}
                         value={form.lowStockAlert}
                         onChange={(e) =>
                           setForm((p) => ({
                             ...p,
-                            lowStockAlert: parseFloat(e.target.value) || 0,
+                            lowStockAlert: Math.max(
+                              0,
+                              parseFloat(e.target.value) || 0,
+                            ),
                           }))
                         }
                         className={inputClass}

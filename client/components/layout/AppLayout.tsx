@@ -26,7 +26,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [token, router]);
 
   return (
-    // Provider is the OUTERMOST wrapper — nothing is outside its context
     <ThemeContext.Provider value={themeState}>
       <div className="min-h-screen bg-[#F5F5F5] dark:bg-[#0f172a] flex relative overflow-hidden transition-colors duration-200">
         <Sidebar mobileOpen={sidebarOpen} setMobileOpen={setSidebarOpen} />
