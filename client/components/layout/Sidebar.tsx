@@ -84,7 +84,10 @@ function SidebarContent({
             </h3>
             <nav className="space-y-1.5">
               {group.items.map(({ href, icon: Icon, label }) => {
-                const active = pathname.startsWith(href);
+                const active =
+                  href === "/dashboard"
+                    ? pathname === "/dashboard"
+                    : pathname.startsWith(href);
                 return (
                   <Link
                     key={href}

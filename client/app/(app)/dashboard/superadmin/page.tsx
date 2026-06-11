@@ -1,4 +1,10 @@
+import AppLayout from "@/components/layout/AppLayout";
 import SuperAdminPage from "@/components/SuperAdminPage ";
+
 export default function Page() {
-  return <SuperAdminPage />;
+  return (
+    <AppLayout>
+      <SuperAdminPage />
+    </AppLayout>
+  );
 }
