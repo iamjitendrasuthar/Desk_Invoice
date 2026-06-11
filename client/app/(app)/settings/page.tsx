@@ -20,7 +20,10 @@ import {
   Landmark,
   AlertCircle,
   Loader2,
+  EyeOff,
+  Eye,
 } from "lucide-react";
+import { changePassword } from "@/services/settingsService";
 
 // ─── Framer Motion Variants ────────────────────────────────────────────────
 const containerVariants: Variants = {
@@ -146,7 +149,41 @@ export default function SettingsPage() {
 
   const [activeTab, setActiveTab] = useState("profile");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // page.tsx ke top mein import add karo
 
+  // SETTINGS_TABS ke baad ya SettingsPage ke andar — ye state add karo:
+  // (SettingsPage component ke andar, useSettings ke neeche)
+  const [pwForm, setPwForm] = useState({ current: "", next: "", confirm: "" });
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwError, setPwError] = useState<string | null>(null);
+  const [pwSuccess, setPwSuccess] = useState(false);
+
+  const handlePasswordChange = async () => {
+    setPwError(null);
+    if (!pwForm.current || !pwForm.next || !pwForm.confirm) {
+      setPwError("All fields are required");
+      return;
+    }
+    if (pwForm.next !== pwForm.confirm) {
+      setPwError("New passwords do not match");
+      return;
+    }
+    if (pwForm.next.length < 6) {
+      setPwError("Password must be at least 6 characters");
+      return;
+    }
+    try {
+      setPwSaving(true);
+      await changePassword(pwForm.current, pwForm.next);
+      setPwForm({ current: "", next: "", confirm: "" });
+      setPwSuccess(true);
+      setTimeout(() => setPwSuccess(false), 3000);
+    } catch (err: any) {
+      setPwError(err.message);
+    } finally {
+      setPwSaving(false);
+    }
+  };
   if (loading) {
     return (
       <AppLayout>
@@ -660,43 +697,62 @@ export default function SettingsPage() {
                         Security Settings
                       </h3>
                       <p className="text-sm font-medium text-slate-400 dark:text-slate-500 mt-0.5">
-                        Ensure your active operator portal session data has
-                        randomized password components.
+                        Update your account password.
                       </p>
                     </div>
 
                     <div className="max-w-md space-y-5">
+                      {/* Error */}
+                      {pwError && (
+                        <div className="flex items-center gap-2 bg-rose-50 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 px-4 py-3 rounded-md text-sm font-medium">
+                          <AlertCircle className="w-4 h-4 shrink-0" />
+                          {pwError}
+                        </div>
+                      )}
+                      {/* Success */}
+                      {pwSuccess && (
+                        <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 px-4 py-3 rounded-md text-sm font-medium">
+                          <CheckCircle2 className="w-4 h-4 shrink-0" />
+                          Password updated successfully!
+                        </div>
+                      )}
                       <Field label="Current Password">
-                        <input
-                          type="password"
-                          className={inputCls}
-                          placeholder="••••••••"
+                        <PasswordInput
+                          value={pwForm.current}
+                          onChange={(v) =>
+                            setPwForm((p) => ({ ...p, current: v }))
+                          }
                         />
                       </Field>
                       <Field label="New Password">
-                        <input
-                          type="password"
-                          className={inputCls}
-                          placeholder="••••••••"
+                        <PasswordInput
+                          value={pwForm.next}
+                          onChange={(v) =>
+                            setPwForm((p) => ({ ...p, next: v }))
+                          }
                         />
                       </Field>
                       <Field label="Confirm New Password">
-                        <input
-                          type="password"
-                          className={inputCls}
-                          placeholder="••••••••"
+                        <PasswordInput
+                          value={pwForm.confirm}
+                          onChange={(v) =>
+                            setPwForm((p) => ({ ...p, confirm: v }))
+                          }
                         />
                       </Field>
                       <button
                         type="button"
-                        className="w-full bg-[#007676] hover:bg-[#005f5f] text-white px-4 py-2.5 rounded-md text-sm font-bold tracking-wide transition-all shadow-xs mt-2"
+                        onClick={handlePasswordChange}
+                        disabled={pwSaving}
+                        className="w-full bg-[#007676] hover:bg-[#005f5f] text-white px-4 py-2.5 rounded-md text-sm font-bold tracking-wide transition-all shadow-xs mt-2 flex items-center justify-center gap-2 disabled:opacity-50"
                       >
-                        Update Password
+                        {pwSaving ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <ShieldCheck className="w-4 h-4" />
+                        )}
+                        {pwSaving ? "Updating..." : "Update Password"}
                       </button>
-                      <p className="text-xs text-slate-400 dark:text-slate-500 font-medium text-center italic">
-                        * Password alteration communicates with isolation auth
-                        routing models independently.
-                      </p>
                     </div>
                   </motion.div>
                 )}
@@ -786,3 +842,38 @@ function ToggleRow({
     </div>
   );
 }
+// ─── Password Input with Eye Toggle ───────────────────────────────────────
+const PasswordInput = ({
+  value,
+  onChange,
+  placeholder = "••••••••",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) => {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative">
+      <input
+        type={show ? "text" : "password"}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className={`${inputCls} pr-10`}
+      />
+      <button
+        type="button"
+        tabIndex={-1}
+        onClick={() => setShow((v) => !v)}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+      >
+        {show ? (
+          <EyeOff className="w-4 h-4 stroke-[1.8]" />
+        ) : (
+          <Eye className="w-4 h-4 stroke-[1.8]" />
+        )}
+      </button>
+    </div>
+  );
+};

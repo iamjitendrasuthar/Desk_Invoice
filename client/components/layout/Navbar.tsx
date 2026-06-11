@@ -7,7 +7,12 @@ import { cn } from "@/lib/utils";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuthStore } from "@/store/authStore";
+import { fetchSettings } from "@/services/settingsService";
 import Link from "next/link";
+
+const API_BASE = (
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+).replace("/api", "");
 
 interface NavbarProps {
   onMenuToggle?: () => void;
@@ -22,6 +27,17 @@ export default function Navbar({ onMenuToggle, logout }: NavbarProps) {
   const displayName = user?.name || "User";
   const displayRole = user?.role?.replace(/_/g, " ") || "User";
   const avatarInitial = displayName.charAt(0).toUpperCase();
+
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchSettings()
+      .then((data) => {
+          // @ts-ignore
+        if (data?.logo) setLogoUrl(`${API_BASE}${data.logo}`);
+      })
+      .catch(() => {}); // silently fail — initials fallback dikhega
+  }, []);
 
   const actionBtnClass =
     "w-10 h-10 flex items-center justify-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 rounded-full hover:border-slate-300 dark:hover:border-slate-600 transition-colors";
@@ -73,9 +89,20 @@ export default function Navbar({ onMenuToggle, logout }: NavbarProps) {
           {/* Profile Dropdown */}
           <DropdownMenu.Root>
             <DropdownMenu.Trigger className="flex items-center gap-2 pl-2 outline-none">
-              {/* Avatar — initials fallback */}
-              <div className="w-10 h-10 rounded-full border border-slate-200 dark:border-slate-700 bg-[#007676]/10 dark:bg-[#007676]/20 flex items-center justify-center text-[#007676] font-extrabold text-sm shrink-0">
-                {avatarInitial}
+              {/* Avatar — logo image ya initials fallback */}
+              <div className="w-10 h-10 rounded-full border border-slate-200 dark:border-slate-700 bg-[#007676]/10 dark:bg-[#007676]/20 flex items-center justify-center overflow-hidden shrink-0">
+                {logoUrl ? (
+                  <img
+                    src={logoUrl}
+                    alt={displayName}
+                    className="w-full h-full object-cover"
+                    onError={() => setLogoUrl(null)}
+                  />
+                ) : (
+                  <span className="text-[#007676] font-extrabold text-sm">
+                    {avatarInitial}
+                  </span>
+                )}
               </div>
               <div className="hidden lg:block text-left">
                 <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 leading-none">
@@ -92,14 +119,30 @@ export default function Navbar({ onMenuToggle, logout }: NavbarProps) {
               className="bg-white dark:bg-slate-800 p-2 rounded-2xl border border-slate-200 dark:border-slate-700 w-56 mt-2 mr-6 shadow-lg"
               sideOffset={5}
             >
-              {/* User info header */}
-              <div className="px-3 py-2.5 mb-1 border-b border-slate-100 dark:border-slate-700">
-                <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">
-                  {displayName}
-                </p>
-                <p className="text-[11px] text-slate-400 capitalize mt-0.5">
-                  {displayRole}
-                </p>
+              {/* User info header — logo bhi dropdown mein */}
+              <div className="px-3 py-2.5 mb-1 border-b border-slate-100 dark:border-slate-700 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 bg-[#007676]/10 dark:bg-[#007676]/20 flex items-center justify-center overflow-hidden shrink-0">
+                  {logoUrl ? (
+                    <img
+                      src={logoUrl}
+                      alt={displayName}
+                      className="w-full h-full object-cover"
+                      onError={() => setLogoUrl(null)}
+                    />
+                  ) : (
+                    <span className="text-[#007676] font-extrabold text-xs">
+                      {avatarInitial}
+                    </span>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">
+                    {displayName}
+                  </p>
+                  <p className="text-[11px] text-slate-400 capitalize mt-0.5">
+                    {displayRole}
+                  </p>
+                </div>
               </div>
 
               <Link href="/settings">

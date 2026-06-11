@@ -1,6 +1,3 @@
-// services/settingsService.js
-// Handles all API calls for the Settings page
-
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 /**
@@ -41,7 +38,7 @@ export const updateSettings = async (fields, logoFile = null) => {
 
   // Flatten nested objects for FormData
   // businessAddress and bankDetails are nested — send as JSON string
-  const { businessAddress, bankDetails, ...rest } = fields;
+  const { businessAddress, bankDetails, logoUrl, ...rest } = fields;
 
   Object.entries(rest).forEach(([key, val]) => {
     if (val !== undefined && val !== null) {
@@ -74,4 +71,62 @@ export const updateSettings = async (fields, logoFile = null) => {
   const json = await res.json();
   if (!json.success) throw new Error(json.message || "Failed to save settings");
   return json.data;
+};
+
+export const changePassword = async (currentPassword, newPassword) => {
+  const res = await fetch(`${API_BASE}/auth/profile`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getToken()}`,
+    },
+    body: JSON.stringify({ currentPassword, password: newPassword }),
+  });
+  const json = await res.json();
+  if (!json.success)
+    throw new Error(json.message || "Failed to update password");
+  return json.data;
+};
+
+/**
+ * Step 1: Email pe OTP bhejo
+ */
+export const sendForgotPasswordOTP = async (email) => {
+  const res = await fetch(`${API_BASE}/auth/forgot-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  const json = await res.json();
+  if (!json.success) throw new Error(json.message || "Failed to send OTP");
+  return json; // { success, message, devOtp? }
+};
+
+/**
+ * Step 2: OTP verify karo
+ */
+export const verifyForgotPasswordOTP = async (email, otp) => {
+  const res = await fetch(`${API_BASE}/auth/verify-otp`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, otp }),
+  });
+  const json = await res.json();
+  if (!json.success) throw new Error(json.message || "Invalid OTP");
+  return json; // { success, resetToken }
+};
+
+/**
+ * Step 3: Naya password set karo
+ */
+export const resetPassword = async (email, resetToken, newPassword) => {
+  const res = await fetch(`${API_BASE}/auth/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, resetToken, newPassword }),
+  });
+  const json = await res.json();
+  if (!json.success)
+    throw new Error(json.message || "Failed to reset password");
+  return json;
 };

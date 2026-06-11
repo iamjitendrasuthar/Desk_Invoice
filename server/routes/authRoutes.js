@@ -9,16 +9,24 @@ const {
   updateUser,
   deleteUser,
 } = require("../controllers/authController");
+const {
+  forgotPassword,
+  verifyOTP,
+  resetPassword,
+} = require("../controllers/forgotPasswordController");
 const { protect, requireRole } = require("../middleware/authMiddleware");
 
-// Public
+// ─── Public ───────────────────────────────────────────────────────────────────
 router.post("/login", login);
+router.post("/forgot-password", forgotPassword);
+router.post("/verify-otp", verifyOTP);
+router.post("/reset-password", resetPassword);
 
-// Authenticated (any role)
+// ─── Authenticated (any role) ─────────────────────────────────────────────────
 router.get("/me", protect, getMe);
 router.put("/profile", protect, updateProfile);
 
-// Tenant Admin + Superadmin — user management
+// ─── Tenant Admin + Superadmin — user management ──────────────────────────────
 router.get(
   "/users",
   protect,

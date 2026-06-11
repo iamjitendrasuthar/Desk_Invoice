@@ -2,6 +2,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { fetchSettings, updateSettings } from "@/services/settingsService";
 import { useAuthStore } from "@/store/authStore";
+const API_BASE = (
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+).replace("/api", "");
 
 const mapDbToForm = (data) => ({
   profile: {
@@ -31,7 +34,7 @@ const mapDbToForm = (data) => ({
     ifscCode: data.bankDetails?.ifscCode || "",
     accountHolderName: data.bankDetails?.accountHolderName || "",
   },
-  logoUrl: data.logo || "",
+  logoUrl: data.logo ? `${API_BASE}${data.logo}` : "",
 });
 
 const mapFormToDb = (forms) => ({

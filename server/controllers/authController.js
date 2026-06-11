@@ -88,12 +88,29 @@ const getMe = async (req, res) => {
 // @route  PUT /api/auth/profile
 const updateProfile = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, currentPassword } = req.body;
     const user = await User.findById(req.user._id);
 
     if (name) user.name = name;
     if (email) user.email = email;
-    if (password) user.password = password; // pre-save hook hashes it
+
+    // Password change: currentPassword verify karo pehle
+    if (password) {
+      if (!currentPassword) {
+        return res.status(400).json({
+          success: false,
+          message: "Current password is required to set a new password",
+        });
+      }
+      const isMatch = await user.comparePassword(currentPassword);
+      if (!isMatch) {
+        return res.status(401).json({
+          success: false,
+          message: "Current password is incorrect",
+        });
+      }
+      user.password = password;
+    }
 
     await user.save();
     res.json({
