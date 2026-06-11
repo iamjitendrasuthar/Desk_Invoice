@@ -1,9 +1,7 @@
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const User = require("../models/User");
-// File ke top mein, require statements ke baad
-console.log("EMAIL_USER:", process.env.EMAIL_USER);
-console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "loaded ✅" : "missing ❌");
+
 // ─── Nodemailer Transporter ────────────────────────────────────────────────────
 const transporter = nodemailer.createTransport({
   service: "gmail",
