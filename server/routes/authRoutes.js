@@ -13,7 +13,7 @@ const {
   forgotPassword,
   verifyOTP,
   resetPassword,
-} = require("../controllers/forgotPasswordController");
+} = require("../controllers/forgotpasswordController");
 const { protect, requireRole } = require("../middleware/authMiddleware");
 
 // ─── Public ───────────────────────────────────────────────────────────────────
