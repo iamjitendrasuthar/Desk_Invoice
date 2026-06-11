@@ -1,12 +1,8 @@
 // hooks/useSettings.js
-// Custom hook to manage settings state, fetching, and saving
-
 import { useState, useEffect, useCallback } from "react";
 import { fetchSettings, updateSettings } from "@/services/settingsService";
+import { useAuthStore } from "@/store/authStore";
 
-/**
- * Maps flat DB settings to our UI form state shape
- */
 const mapDbToForm = (data) => ({
   profile: {
     name: data.businessName || "",
@@ -38,9 +34,6 @@ const mapDbToForm = (data) => ({
   logoUrl: data.logo || "",
 });
 
-/**
- * Maps UI form state back to DB payload shape
- */
 const mapFormToDb = (forms) => ({
   businessName: forms.business.companyName || forms.profile.name,
   businessEmail: forms.profile.email,
@@ -66,6 +59,8 @@ const mapFormToDb = (forms) => ({
 });
 
 export function useSettings() {
+  const { user } = useAuthStore();
+
   const [forms, setForms] = useState({
     profile: { name: "", email: "", phone: "", role: "Admin" },
     business: {
@@ -90,20 +85,30 @@ export function useSettings() {
     logoUrl: "",
   });
 
-  const [logoFile, setLogoFile] = useState(null); // File object for new upload
-  const [logoPreview, setLogoPreview] = useState(null); // Local preview URL
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Load settings from DB on mount
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
         const data = await fetchSettings();
-        setForms(mapDbToForm(data));
+        const mapped = mapDbToForm(data);
+
+        // Logged-in user ka real naam, email aur role inject karo
+        setForms({
+          ...mapped,
+          profile: {
+            ...mapped.profile,
+            name: user?.name || mapped.profile.name,
+            email: user?.email || mapped.profile.email,
+            role: user?.role?.replace(/_/g, " ") || "Admin",
+          },
+        });
       } catch (err) {
         setError(err.message);
       } finally {
@@ -111,9 +116,8 @@ export function useSettings() {
       }
     };
     load();
-  }, []);
+  }, [user]);
 
-  // Handle logo file selection
   const handleLogoChange = useCallback((file) => {
     if (!file) return;
     setLogoFile(file);
@@ -122,7 +126,6 @@ export function useSettings() {
     reader.readAsDataURL(file);
   }, []);
 
-  // Update a specific tab's form fields
   const updateForm = useCallback((tab, updates) => {
     setForms((prev) => ({
       ...prev,
@@ -130,15 +133,25 @@ export function useSettings() {
     }));
   }, []);
 
-  // Save all settings to DB
   const save = useCallback(async () => {
     try {
       setSaving(true);
       setError(null);
       const payload = mapFormToDb(forms);
       const updated = await updateSettings(payload, logoFile);
-      // Refresh forms from saved data
-      setForms(mapDbToForm(updated));
+      const mapped = mapDbToForm(updated);
+
+      // Save ke baad bhi user data maintain karo
+      setForms({
+        ...mapped,
+        profile: {
+          ...mapped.profile,
+          name: user?.name || mapped.profile.name,
+          email: user?.email || mapped.profile.email,
+          role: user?.role?.replace(/_/g, " ") || "Admin",
+        },
+      });
+
       setLogoFile(null);
       setLogoPreview(null);
       setShowSuccess(true);
@@ -148,7 +161,7 @@ export function useSettings() {
     } finally {
       setSaving(false);
     }
-  }, [forms, logoFile]);
+  }, [forms, logoFile, user]);
 
   return {
     forms,
